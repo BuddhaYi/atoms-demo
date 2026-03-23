@@ -1,4 +1,4 @@
-import { buildSystemPrompt, buildFixBugPrompt, buildPlanPrompt, buildImplementPrompt } from '@/lib/ai/prompts/system'
+import { buildSystemPrompt, buildFixBugPrompt, OPTIMIZE_PROMPT } from '@/lib/ai/prompts/system'
 import { streamFromModel } from '@/lib/ai/model-router'
 import { createStreamParser } from '@/lib/agents/stream-parser'
 import type { ModelProvider, WorkspaceMode, StreamEvent } from '@/types'
@@ -30,17 +30,26 @@ export async function POST(request: Request) {
     let systemPrompt: string
     if (fixBug) {
       systemPrompt = buildFixBugPrompt(bugError || '', existingCode || {})
+    } else if (phase === 'optimize') {
+      systemPrompt = OPTIMIZE_PROMPT
     } else if (phase === 'plan') {
-      systemPrompt = buildPlanPrompt(existingCode)
-    } else if (phase === 'implement' && Array.isArray(approvedFeatures)) {
-      systemPrompt = buildImplementPrompt(approvedFeatures, existingCode)
+      systemPrompt = buildSystemPrompt(mode, existingCode, {
+        activeAgents: ['emma'],
+        stopAfterAgent: 'emma',
+      })
     } else {
       systemPrompt = buildSystemPrompt(mode, existingCode)
     }
 
-    const userMessage = fixBug
-      ? `Fix this error: ${bugError}`
-      : message
+    let userMessage: string
+    if (fixBug) {
+      userMessage = `Fix this error: ${bugError}`
+    } else if (phase === 'implement' && Array.isArray(approvedFeatures)) {
+      const featureList = approvedFeatures.map((f, i) => `${i + 1}. ${f}`).join('\n')
+      userMessage = `${message}\n\nApproved features to implement:\n${featureList}\n\nPlease have Bob design the architecture first, then Alex implement the code. Do NOT skip Bob.`
+    } else {
+      userMessage = message
+    }
 
     const llmStream = await streamFromModel(model, systemPrompt, userMessage, history)
     const parser = createStreamParser()

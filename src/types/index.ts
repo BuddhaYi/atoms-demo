@@ -42,7 +42,7 @@ export interface CodeVersion {
 }
 
 // Chat message
-export type ContentType = 'text' | 'feature_list' | 'architecture' | 'code' | 'data_insight' | 'review'
+export type ContentType = 'text' | 'feature_list' | 'architecture' | 'code' | 'data_insight' | 'review' | 'prompt_options'
 
 export interface ChatMessage {
   id: string

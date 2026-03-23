@@ -31,6 +31,43 @@ RULES for generated code:
 11. Each component file must have a default export
 12. Import between files using relative paths like "./components/Header"`
 
+const AGENT_DEFINITIONS: Record<string, string> = {
+  mike: '[MIKE] Team Leader: Coordinates the team and optimizes user prompts',
+  emma: '[EMMA] Product Manager: Lists 3-8 key features in a :::feature_list block',
+  bob: '[BOB] Architect: Shows component tree in a :::architecture block',
+  alex: '[ALEX] Engineer: Writes the complete working code in a :::files block',
+}
+
+const AGENT_RULES: Record<string, string> = {
+  mike: 'Mike: 1-2 sentences of coordination only',
+  emma: 'Emma MUST use :::feature_list block with numbered items (3-8 features)',
+  bob: 'Bob MUST use :::architecture block showing the component tree',
+  alex: 'Alex MUST use :::files block with complete, runnable JSON code',
+}
+
+export const OPTIMIZE_PROMPT = `You are Mike, the team leader. Your job is to take the user's rough idea and generate 3 refined, detailed prompt options for building a web application.
+
+For each option, expand the user's idea in a different direction — varying in scope, style, or focus. Make them specific, vivid, and actionable.
+
+Output format — you MUST use this exact structure:
+
+[MIKE]
+I've analyzed your idea and prepared 3 directions for you to choose from:
+
+:::prompt_options
+1. **Option title**: Detailed description of what the app would look like, key features and interactions, visual style.
+2. **Option title**: Detailed description with a different angle or scope, different features or target audience.
+3. **Option title**: Detailed description with yet another creative direction, unique twist or expanded functionality.
+:::
+
+CRITICAL RULES:
+- Output EXACTLY 3 options, numbered 1-3
+- Each option must start with a **bold title** followed by a colon
+- Each option should be 1-2 sentences, specific and buildable
+- STOP immediately after the :::prompt_options closing tag
+- Do NOT generate any code or feature lists
+- Respond in the same language as the user's prompt`
+
 // Use a regular string for the few-shot to avoid template literal conflicts with backticks in code
 const FEW_SHOT_EXAMPLE = [
   '',
@@ -69,21 +106,53 @@ const FEW_SHOT_EXAMPLE = [
   '',
 ].join('\n')
 
-export function buildSystemPrompt(mode: WorkspaceMode, existingCode?: Record<string, string>): string {
-  const teamPreamble = mode === 'team'
-    ? `You are simulating a collaborative AI agent team building a web application. The team consists of:
+interface PromptOptions {
+  activeAgents?: string[]
+  approvedFeatures?: string[]
+  stopAfterAgent?: string
+}
 
-- [MIKE] Team Leader: Briefly coordinates and assigns tasks (1-2 sentences max)
-- [EMMA] Product Manager: Lists 3-6 key features in a :::feature_list block
-- [BOB] Architect: Shows component tree in a :::architecture block
-- [ALEX] Engineer: Writes the complete working code in a :::files block
+export function buildSystemPrompt(
+  mode: WorkspaceMode,
+  existingCode?: Record<string, string>,
+  options?: PromptOptions,
+): string {
+  const { activeAgents, approvedFeatures, stopAfterAgent } = options || {}
 
-Each agent MUST be prefixed with their tag like [MIKE], [EMMA], [BOB], [ALEX].
-Mike speaks first, then Emma, then Bob, then Alex.
-Emma MUST use :::feature_list block. Bob MUST use :::architecture block. Alex MUST use :::files block.
-Keep Mike, Emma, and Bob messages concise. Alex generates the full code.`
-    : `You are Alex, an expert full-stack engineer. You directly write complete, working React applications.
-Always start your response with [ALEX] and include code in a :::files block.`
+  // Engineer mode: Alex only
+  if (mode === 'engineer') {
+    return buildEngineerPrompt(existingCode)
+  }
+
+  // Determine which agents to include
+  const agents = activeAgents || ['mike', 'emma', 'bob', 'alex']
+  const agentDefs = agents.map(a => `- ${AGENT_DEFINITIONS[a]}`).join('\n')
+  const agentOrder = agents.map(a => a.charAt(0).toUpperCase() + a.slice(1)).join(', then ')
+  const agentRules = agents.map(a => `- ${AGENT_RULES[a]}`).join('\n')
+  const agentTags = agents.map(a => `[${a.toUpperCase()}]`).join(', ')
+
+  let preamble = `You are simulating a collaborative AI agent team building a web application. The team consists of:
+
+${agentDefs}
+
+Each agent MUST be prefixed with their tag like ${agentTags}.
+${agentOrder} — follow this exact order.
+Keep all agent messages concise. Alex generates the full code.`
+
+  // Approved features context
+  let featuresSection = ''
+  if (approvedFeatures && approvedFeatures.length > 0) {
+    const featureList = approvedFeatures.map((f, i) => `${i + 1}. ${f}`).join('\n')
+    featuresSection = `\nThe user has already approved the following features to implement:\n${featureList}\n\nIMPORTANT: ONLY implement the approved features listed above.\n`
+  }
+
+  // Stop instruction
+  let stopSection = ''
+  if (stopAfterAgent) {
+    const stopName = stopAfterAgent.charAt(0).toUpperCase() + stopAfterAgent.slice(1)
+    stopSection = `\nIMPORTANT: STOP after ${stopName}'s output. Do NOT include any subsequent agents. Do NOT generate any code.
+The user will review and approve the output before implementation begins.\n`
+  }
 
   const contextSection = existingCode
     ? `\n\nCURRENT CODE (the user wants to modify this existing application):
@@ -95,16 +164,47 @@ IMPORTANT: When modifying existing code:
 - Keep the same file structure`
     : ''
 
-  return `${teamPreamble}
+  // Include few-shot example only when all 4 agents are active
+  const exampleSection = agents.length === 4 ? `\n${FEW_SHOT_EXAMPLE}` : ''
+
+  return `${preamble}
+${featuresSection}${stopSection}
+${SANDPACK_PACKAGES}
+
+${CODE_FORMAT}
+${exampleSection}${contextSection}
+
+CRITICAL RULES:
+${agentRules}
+- ALWAYS output valid JSON in :::files blocks
+- Code MUST be complete and runnable (not snippets)
+- Use Tailwind CSS classes for ALL styling
+- Include interactive state management with useState
+- Make the app visually polished and professional
+- Respond in the same language as the user's prompt`
+}
+
+function buildEngineerPrompt(existingCode?: Record<string, string>): string {
+  const contextSection = existingCode
+    ? `\n\nCURRENT CODE (the user wants to modify this existing application):
+${Object.entries(existingCode).map(([file, code]) => `--- ${file} ---\n${code}`).join('\n\n')}
+
+IMPORTANT: When modifying existing code:
+- Only return files that need changes
+- Preserve all existing functionality unless explicitly asked to remove it
+- Keep the same file structure`
+    : ''
+
+  return `You are Alex, an expert full-stack engineer. You directly write complete, working React applications.
+Always start your response with [ALEX] and include code in a :::files block.
 
 ${SANDPACK_PACKAGES}
 
 ${CODE_FORMAT}
-
-${FEW_SHOT_EXAMPLE}
 ${contextSection}
 
 CRITICAL RULES:
+- ${AGENT_RULES.alex}
 - ALWAYS output valid JSON in :::files blocks
 - Code MUST be complete and runnable (not snippets)
 - Use Tailwind CSS classes for ALL styling
@@ -137,74 +237,6 @@ SUGGESTIONS:
 :::
 
 Keep suggestions concrete and actionable. Respond in the same language as the code comments or variable names. If the code uses Chinese, respond in Chinese.`
-}
-
-export function buildPlanPrompt(existingCode?: Record<string, string>): string {
-  const contextSection = existingCode
-    ? `\n\nCURRENT CODE (the user wants to modify this existing application):\n${Object.entries(existingCode).map(([file, code]) => `--- ${file} ---\n${code}`).join('\n\n')}\n\nIMPORTANT: Consider existing functionality when analyzing requirements.`
-    : ''
-
-  return `You are simulating a collaborative AI agent team. Only TWO agents participate in this phase:
-
-- [MIKE] Team Leader: Briefly coordinates and assigns tasks (1-2 sentences max)
-- [EMMA] Product Manager: Lists 3-8 key features in a :::feature_list block
-
-Each agent MUST be prefixed with their tag like [MIKE], [EMMA].
-Mike speaks first, then Emma.
-Emma MUST use :::feature_list block with numbered items.
-
-IMPORTANT: STOP after Emma's feature_list. Do NOT include Bob or Alex. Do NOT generate any code.
-The user will review and approve the feature list before implementation begins.
-
-${SANDPACK_PACKAGES}
-${contextSection}
-
-CRITICAL RULES:
-- Mike: 1-2 sentences of coordination only
-- Emma: Output a :::feature_list block with numbered features (3-8 items)
-- Each feature should be a clear, concise description
-- STOP immediately after the :::feature_list closing tag
-- Do NOT output any architecture or code
-- Respond in the same language as the user's prompt`
-}
-
-export function buildImplementPrompt(approvedFeatures: string[], existingCode?: Record<string, string>): string {
-  const contextSection = existingCode
-    ? `\n\nCURRENT CODE (modify this existing application):\n${Object.entries(existingCode).map(([file, code]) => `--- ${file} ---\n${code}`).join('\n\n')}\n\nIMPORTANT: When modifying existing code:\n- Only return files that need changes\n- Preserve all existing functionality unless explicitly asked to remove it\n- Keep the same file structure`
-    : ''
-
-  const featureList = approvedFeatures.map((f, i) => `${i + 1}. ${f}`).join('\n')
-
-  return `You are simulating a collaborative AI agent team. Only TWO agents participate in this phase:
-
-- [BOB] Architect: Shows component tree in a :::architecture block
-- [ALEX] Engineer: Writes the complete working code in a :::files block
-
-The user has already approved the following features to implement:
-
-:::approved_features
-${featureList}
-:::
-
-Each agent MUST be prefixed with their tag like [BOB], [ALEX].
-Bob speaks first, then Alex.
-Bob MUST use :::architecture block. Alex MUST use :::files block.
-
-${SANDPACK_PACKAGES}
-
-${CODE_FORMAT}
-${contextSection}
-
-CRITICAL RULES:
-- ONLY implement the approved features listed above
-- Bob: Design architecture that covers all approved features
-- Alex: Write complete, runnable code implementing all approved features
-- ALWAYS output valid JSON in :::files blocks
-- Code MUST be complete and runnable (not snippets)
-- Use Tailwind CSS classes for ALL styling
-- Include interactive state management with useState
-- Make the app visually polished and professional
-- Respond in the same language as the approved features`
 }
 
 export function buildFixBugPrompt(error: string, currentCode: Record<string, string>): string {

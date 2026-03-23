@@ -26,6 +26,10 @@ interface WorkspaceState {
   activeAgent: AgentName | null
   isGenerating: boolean
 
+  // Prompt optimization
+  pendingPromptOptions: string[] | null
+  awaitingPromptSelection: boolean
+
   // Approval
   pendingFeatures: Array<{ text: string; approved: boolean }> | null
   awaitingApproval: boolean
@@ -54,6 +58,8 @@ interface WorkspaceState {
   setPreviewDevice: (device: PreviewDevice) => void
   setShowConsole: (show: boolean) => void
   addTokens: (tokens: number) => void
+  setPendingPromptOptions: (options: string[] | null) => void
+  setAwaitingPromptSelection: (v: boolean) => void
   setPendingFeatures: (features: Array<{ text: string; approved: boolean }> | null) => void
   setAwaitingApproval: (v: boolean) => void
   setLastUserPrompt: (prompt: string) => void
@@ -70,6 +76,8 @@ const initialState = {
   currentVersionNumber: 0,
   activeAgent: null as AgentName | null,
   isGenerating: false,
+  pendingPromptOptions: null as string[] | null,
+  awaitingPromptSelection: false,
   pendingFeatures: null as Array<{ text: string; approved: boolean }> | null,
   awaitingApproval: false,
   lastUserPrompt: '',
@@ -136,6 +144,8 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   setShowConsole: (show) => set({ showConsole: show }),
   addTokens: (tokens) =>
     set((state) => ({ tokensUsed: state.tokensUsed + tokens })),
+  setPendingPromptOptions: (options) => set({ pendingPromptOptions: options }),
+  setAwaitingPromptSelection: (v) => set({ awaitingPromptSelection: v }),
   setPendingFeatures: (features) => set({ pendingFeatures: features }),
   setAwaitingApproval: (v) => set({ awaitingApproval: v }),
   setLastUserPrompt: (prompt) => set({ lastUserPrompt: prompt }),

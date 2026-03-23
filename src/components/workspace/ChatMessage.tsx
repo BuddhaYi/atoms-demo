@@ -6,6 +6,7 @@ import { useTranslation } from '@/hooks/useTranslation'
 import type { TranslationKey } from '@/i18n'
 import { FeatureListCard } from './FeatureListCard'
 import { ArchitectureCard } from './ArchitectureCard'
+import { PromptOptionsCard } from './PromptOptionsCard'
 
 interface ChatMessageProps {
   message: ChatMessageType
@@ -60,7 +61,9 @@ export function ChatMessage({ message }: ChatMessageProps) {
           </div>
         )}
         <div className="text-sm">
-          {message.content_type === 'feature_list' ? (
+          {message.content_type === 'prompt_options' ? (
+            <PromptOptionsCard content={message.content} />
+          ) : message.content_type === 'feature_list' ? (
             <FeatureListCard content={message.content} />
           ) : message.content_type === 'architecture' ? (
             <ArchitectureCard content={message.content} />

@@ -12,9 +12,17 @@ function parseFeatureList(content: string): string[] {
     .map((line) => line.replace(/^\d+\.\s*/, ''))
 }
 
+function parsePromptOptions(content: string): string[] {
+  return content
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => /^\d+\.\s/.test(line))
+    .map((line) => line.replace(/^\d+\.\s*/, ''))
+}
+
 interface SendOptions {
   error?: string
-  phase?: 'plan' | 'implement'
+  phase?: 'optimize' | 'plan' | 'implement'
   approvedFeatures?: string[]
 }
 
@@ -44,8 +52,8 @@ export function useChat() {
       const phase = options?.phase
       const approvedFeatures = options?.approvedFeatures
 
-      // Add user message (skip for fixBug and implement phase)
-      if (!fixBug && phase !== 'implement') {
+      // Add user message (skip for fixBug, implement phase, and plan phase after optimize)
+      if (!fixBug && phase !== 'implement' && phase !== 'plan') {
         const userMsg: ChatMessage = {
           id: crypto.randomUUID(),
           project_id: '',
@@ -61,9 +69,9 @@ export function useChat() {
 
       setIsGenerating(true)
 
-      // Determine phase: team mode + new message (not fixBug, not already phased, no existing code) → plan
+      // Determine phase: team mode + new message (not fixBug, not already phased, no existing code) → optimize
       const hasExistingCode = Object.keys(currentCode).length > 0
-      const effectivePhase = phase || (mode === 'team' && !fixBug && !hasExistingCode ? 'plan' : undefined)
+      const effectivePhase = phase || (mode === 'team' && !fixBug && !hasExistingCode ? 'optimize' : undefined)
 
       // Build history from recent messages (last 10 for context, save tokens)
       const recentMessages = messages.slice(-10)
@@ -78,7 +86,9 @@ export function useChat() {
 
       abortRef.current = new AbortController()
 
-      // Track if we saw a feature_list in this stream (for plan phase auto-pause)
+      // Track if we saw prompt_options or feature_list in this stream
+      let sawPromptOptions = false
+      let promptOptionsContent = ''
       let sawFeatureList = false
       let featureListContent = ''
 
@@ -145,6 +155,11 @@ export function useChat() {
                 }
 
                 case 'agent_message': {
+                  // Track prompt_options for optimize phase
+                  if (event.content_type === 'prompt_options' && effectivePhase === 'optimize') {
+                    sawPromptOptions = true
+                    promptOptionsContent += (promptOptionsContent ? '\n' : '') + event.content
+                  }
                   // Track feature_list content for plan phase
                   if (event.content_type === 'feature_list' && effectivePhase === 'plan') {
                     sawFeatureList = true
@@ -238,6 +253,15 @@ export function useChat() {
           }
         }
 
+        // After stream ends: if optimize phase and we saw prompt_options, pause for selection
+        if (effectivePhase === 'optimize' && sawPromptOptions && promptOptionsContent) {
+          const options = parsePromptOptions(promptOptionsContent)
+          if (options.length > 0) {
+            useWorkspaceStore.getState().setPendingPromptOptions(options)
+            useWorkspaceStore.getState().setAwaitingPromptSelection(true)
+          }
+        }
+
         // After stream ends: if plan phase and we saw feature_list, pause for approval
         if (effectivePhase === 'plan' && sawFeatureList && featureListContent) {
           const features = parseFeatureList(featureListContent)
@@ -273,6 +297,18 @@ export function useChat() {
     []
   )
 
+  const selectPrompt = useCallback(async (selectedPrompt: string) => {
+    const state = useWorkspaceStore.getState()
+    if (!state.lastUserPrompt?.trim() || state.isGenerating) return
+
+    // Clear optimize state
+    state.setPendingPromptOptions(null)
+    state.setAwaitingPromptSelection(false)
+
+    // Trigger plan phase with the selected optimized prompt
+    await sendMessage(selectedPrompt, { phase: 'plan' })
+  }, [sendMessage])
+
   const approveFeatures = useCallback(async () => {
     const state = useWorkspaceStore.getState()
     const { pendingFeatures, lastUserPrompt, isGenerating } = state
@@ -304,6 +340,7 @@ export function useChat() {
 
   return {
     sendMessage,
+    selectPrompt,
     approveFeatures,
     stopGeneration,
     isGenerating: store.isGenerating,

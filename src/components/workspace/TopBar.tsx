@@ -52,19 +52,27 @@ export function TopBar({ onExport }: TopBarProps) {
         {/* Mode toggle */}
         <div className="flex items-center bg-muted rounded-lg p-0.5">
           <Button
-            variant={mode === 'engineer' ? 'secondary' : 'ghost'}
+            variant="ghost"
             size="sm"
             onClick={() => setMode('engineer')}
-            className="h-7 text-xs"
+            className={`h-7 text-xs ${
+              mode === 'engineer'
+                ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400 hover:bg-amber-500/25'
+                : ''
+            }`}
           >
             <Zap className="w-3 h-3 mr-1" />
             {t('top.engineer')}
           </Button>
           <Button
-            variant={mode === 'team' ? 'secondary' : 'ghost'}
+            variant="ghost"
             size="sm"
             onClick={() => setMode('team')}
-            className="h-7 text-xs"
+            className={`h-7 text-xs ${
+              mode === 'team'
+                ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400 hover:bg-amber-500/25'
+                : ''
+            }`}
           >
             <Users className="w-3 h-3 mr-1" />
             {t('top.team')}
@@ -103,18 +111,26 @@ export function TopBar({ onExport }: TopBarProps) {
         {/* Language toggle */}
         <div className="flex items-center bg-muted rounded-lg p-0.5">
           <Button
-            variant={locale === 'en' ? 'secondary' : 'ghost'}
+            variant="ghost"
             size="sm"
             onClick={() => setLocale('en')}
-            className="h-7 text-xs"
+            className={`h-7 text-xs ${
+              locale === 'en'
+                ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400 hover:bg-amber-500/25'
+                : ''
+            }`}
           >
             EN
           </Button>
           <Button
-            variant={locale === 'zh' ? 'secondary' : 'ghost'}
+            variant="ghost"
             size="sm"
             onClick={() => setLocale('zh')}
-            className="h-7 text-xs"
+            className={`h-7 text-xs ${
+              locale === 'zh'
+                ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400 hover:bg-amber-500/25'
+                : ''
+            }`}
           >
             中文
           </Button>

@@ -144,6 +144,11 @@ export const en = {
   'files.size': 'Size',
   'files.lines': 'lines',
 
+  // Prompt optimization
+  'optimize.title': 'Prompt Optimization',
+  'optimize.hint': 'Choose a direction for the AI team to work on',
+  'optimize.option': 'Option',
+
   // Approval
   'approval.approve': 'Approve',
   'approval.editPlan': 'Edit Plan',

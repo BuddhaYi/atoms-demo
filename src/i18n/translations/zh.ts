@@ -144,6 +144,11 @@ export const zh = {
   'files.size': '大小',
   'files.lines': '行',
 
+  // Prompt optimization
+  'optimize.title': '提示词优化',
+  'optimize.hint': '选择一个方向，AI 团队将据此展开工作',
+  'optimize.option': '方案',
+
   // Approval
   'approval.approve': '批准',
   'approval.editPlan': '编辑计划',

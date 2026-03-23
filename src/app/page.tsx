@@ -62,18 +62,26 @@ export default function HomePage() {
         <div className="flex items-center gap-2">
           <div className="flex items-center bg-muted rounded-lg p-0.5">
             <Button
-              variant={locale === 'en' ? 'secondary' : 'ghost'}
+              variant="ghost"
               size="sm"
               onClick={() => setLocale('en')}
-              className="h-7 text-xs"
+              className={`h-7 text-xs ${
+                locale === 'en'
+                  ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400 hover:bg-amber-500/25'
+                  : ''
+              }`}
             >
               EN
             </Button>
             <Button
-              variant={locale === 'zh' ? 'secondary' : 'ghost'}
+              variant="ghost"
               size="sm"
               onClick={() => setLocale('zh')}
-              className="h-7 text-xs"
+              className={`h-7 text-xs ${
+                locale === 'zh'
+                  ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400 hover:bg-amber-500/25'
+                  : ''
+              }`}
             >
               中文
             </Button>

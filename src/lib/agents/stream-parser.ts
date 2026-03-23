@@ -7,9 +7,10 @@ const FILES_END = ':::'
 const FEATURE_LIST_START = ':::feature_list'
 const ARCHITECTURE_START = ':::architecture'
 const REVIEW_START = ':::review'
+const PROMPT_OPTIONS_START = ':::prompt_options'
 const BLOCK_END = ':::'
 
-type BlockType = 'files' | 'feature_list' | 'architecture' | 'review' | null
+type BlockType = 'files' | 'feature_list' | 'architecture' | 'review' | 'prompt_options' | null
 
 interface ParserState {
   currentAgent: AgentName | null
@@ -71,6 +72,12 @@ export function createStreamParser() {
             state.inBlock = 'review'
             state.blockContent = ''
             state.buffer = state.buffer.slice(REVIEW_START.length).trimStart()
+            continue
+          }
+          if (state.buffer.startsWith(PROMPT_OPTIONS_START)) {
+            state.inBlock = 'prompt_options'
+            state.blockContent = ''
+            state.buffer = state.buffer.slice(PROMPT_OPTIONS_START.length).trimStart()
             continue
           }
 
@@ -169,6 +176,8 @@ export function createStreamParser() {
                   ? 'feature_list'
                   : state.inBlock === 'review'
                   ? 'review'
+                  : state.inBlock === 'prompt_options'
+                  ? 'prompt_options'
                   : 'architecture'
                 events.push({
                   type: 'agent_message',
