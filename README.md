@@ -8,7 +8,7 @@ Users describe what they want in natural language. A team of AI agents collabora
 
 ## Demo
 
-- Online: _部署链接待补充_
+- Online: https://lab.agentosbase.com
 - GitHub: https://github.com/BuddhaYi/atoms-demo
 
 ---
