@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { ArrowRight, Sparkles, FolderOpen } from 'lucide-react'
 import { AGENTS } from '@/lib/agents/registry'
-import { localDB } from '@/lib/local-storage'
+import { apiClient } from '@/lib/api-client'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { TranslationKey } from '@/i18n'
 import Link from 'next/link'
@@ -36,7 +36,7 @@ export default function HomePage() {
     setIsCreating(true)
     const projectId = `p_${Date.now()}`
 
-    localDB.createProject({
+    await apiClient.createProject({
       id: projectId,
       title: finalPrompt.trim().slice(0, 50),
       description: finalPrompt.trim(),

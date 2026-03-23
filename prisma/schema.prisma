@@ -1,0 +1,55 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  title       String   @default("Untitled Project")
+  description String   @default("")
+  category    String   @default("")
+  status      String   @default("active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  messages ChatMessage[]
+  versions CodeVersion[]
+
+  @@map("projects")
+}
+
+model CodeVersion {
+  id            String   @id @default(cuid())
+  projectId     String   @map("project_id")
+  versionNumber Int      @map("version_number")
+  files         Json     @default("{}")
+  prompt        String   @default("")
+  agentName     String   @default("") @map("agent_name")
+  modelUsed     String   @default("") @map("model_used")
+  tokensUsed    Int      @default(0) @map("tokens_used")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, versionNumber])
+  @@map("code_versions")
+}
+
+model ChatMessage {
+  id          String   @id @default(cuid())
+  projectId   String   @map("project_id")
+  role        String
+  agentName   String?  @map("agent_name")
+  content     String   @default("")
+  contentType String   @default("text") @map("content_type")
+  metadata    Json     @default("{}")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("chat_messages")
+}

@@ -6,7 +6,7 @@ import { useChat } from '@/hooks/useChat'
 import { ChatPanel } from '@/components/workspace/ChatPanel'
 import { PreviewPanel } from '@/components/workspace/PreviewPanel'
 import { TopBar } from '@/components/workspace/TopBar'
-import { localDB } from '@/lib/local-storage'
+import { apiClient } from '@/lib/api-client'
 import { useParams } from 'next/navigation'
 
 export default function WorkspacePage() {
@@ -16,38 +16,44 @@ export default function WorkspacePage() {
   const { sendMessage } = useChat()
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null)
 
-  // Step 1: Initialize workspace (sync, safe for Strict Mode)
+  // Step 1: Initialize workspace — load from API
   useEffect(() => {
     reset()
     setProjectId(projectId)
 
-    const project = localDB.getProject(projectId)
-    setProjectTitle(project ? project.title : 'New Project')
+    const loadData = async () => {
+      const [project, savedMessages, savedVersions] = await Promise.all([
+        apiClient.getProject(projectId),
+        apiClient.getMessages(projectId),
+        apiClient.getVersions(projectId),
+      ])
 
-    // Restore saved data
-    const savedMessages = localDB.getMessages(projectId)
-    const savedVersions = localDB.getVersions(projectId)
-    if (savedMessages.length > 0) {
-      useWorkspaceStore.setState({ messages: savedMessages })
-    }
-    if (savedVersions.length > 0) {
-      const latest = savedVersions[savedVersions.length - 1]
-      useWorkspaceStore.setState({
-        versions: savedVersions,
-        currentVersionNumber: latest.version_number,
-        currentCode: latest.files,
-      })
-    }
+      setProjectTitle(project ? project.title : 'New Project')
 
-    // Queue auto-send if new project
-    if (savedMessages.length === 0) {
-      const storageKey = `project_${projectId}_prompt`
-      const initialPrompt = sessionStorage.getItem(storageKey)
-      if (initialPrompt) {
-        sessionStorage.removeItem(storageKey)
-        setPendingPrompt(initialPrompt)
+      if (savedMessages.length > 0) {
+        useWorkspaceStore.setState({ messages: savedMessages })
+      }
+      if (savedVersions.length > 0) {
+        const latest = savedVersions[savedVersions.length - 1]
+        useWorkspaceStore.setState({
+          versions: savedVersions,
+          currentVersionNumber: latest.version_number,
+          currentCode: latest.files,
+        })
+      }
+
+      // Queue auto-send if new project
+      if (savedMessages.length === 0) {
+        const storageKey = `project_${projectId}_prompt`
+        const initialPrompt = sessionStorage.getItem(storageKey)
+        if (initialPrompt) {
+          sessionStorage.removeItem(storageKey)
+          setPendingPrompt(initialPrompt)
+        }
       }
     }
+
+    loadData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId])
 
@@ -59,17 +65,17 @@ export default function WorkspacePage() {
     }
   }, [pendingPrompt, sendMessage])
 
-  // Auto-save messages to localStorage
+  // Auto-save messages to server
   useEffect(() => {
     if (messages.length > 0) {
-      localDB.saveMessages(projectId, messages)
+      apiClient.saveMessages(projectId, messages)
     }
   }, [projectId, messages])
 
-  // Auto-save versions to localStorage
+  // Auto-save versions to server
   useEffect(() => {
     if (versions.length > 0) {
-      localDB.saveVersions(projectId, versions)
+      apiClient.saveVersions(projectId, versions)
     }
   }, [projectId, versions])
 

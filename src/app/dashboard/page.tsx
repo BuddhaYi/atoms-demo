@@ -2,24 +2,25 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { localDB, type LocalProject } from '@/lib/local-storage'
+import { apiClient, type ApiProject } from '@/lib/api-client'
 import { Button } from '@/components/ui/button'
 import { Sparkles, Plus, Trash2, FolderOpen } from 'lucide-react'
 import { useTranslation } from '@/hooks/useTranslation'
 import Link from 'next/link'
 
 export default function DashboardPage() {
-  const [projects, setProjects] = useState<LocalProject[]>([])
+  const [projects, setProjects] = useState<ApiProject[]>([])
   const router = useRouter()
   const { t, locale, setLocale } = useTranslation()
 
   useEffect(() => {
-    setProjects(localDB.getProjects())
+    apiClient.getProjects().then(setProjects)
   }, [])
 
-  const handleDelete = (id: string) => {
-    localDB.deleteProject(id)
-    setProjects(localDB.getProjects())
+  const handleDelete = async (id: string) => {
+    await apiClient.deleteProject(id)
+    const updated = await apiClient.getProjects()
+    setProjects(updated)
   }
 
   return (
@@ -101,7 +102,7 @@ export default function DashboardPage() {
                 )}
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">
-                    {new Date(project.created_at).toLocaleDateString()}
+                    {new Date(project.createdAt).toLocaleDateString()}
                   </span>
                   <Button
                     variant="outline"

@@ -31,7 +31,7 @@ build:
 lint:
 	npm run lint
 
-# Clean everything
+# Clean everything (including database volume)
 clean:
-	docker compose down --rmi local 2>/dev/null || true
+	docker compose down --rmi local -v 2>/dev/null || true
 	rm -rf .next node_modules
