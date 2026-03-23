@@ -4,9 +4,10 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { ArrowRight, Sparkles, FolderOpen } from 'lucide-react'
+import { ArrowRight, Sparkles, FolderOpen, LogOut } from 'lucide-react'
 import { AGENTS } from '@/lib/agents/registry'
 import { apiClient } from '@/lib/api-client'
+import { useAuth } from '@/hooks/useAuth'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { TranslationKey } from '@/i18n'
 import Link from 'next/link'
@@ -27,6 +28,7 @@ export default function HomePage() {
   const [prompt, setPrompt] = useState('')
   const [isCreating, setIsCreating] = useState(false)
   const router = useRouter()
+  const { user, signOut } = useAuth()
   const { t, locale, setLocale } = useTranslation()
 
   const handleStart = async (inputPrompt?: string) => {
@@ -82,6 +84,16 @@ export default function HomePage() {
               {t('home.projects')}
             </Button>
           </Link>
+          {user && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={async () => { await signOut(); router.push('/login') }}
+            >
+              <LogOut className="w-4 h-4 mr-1" />
+              {user.displayName || user.email.split('@')[0]}
+            </Button>
+          )}
         </div>
       </nav>
 

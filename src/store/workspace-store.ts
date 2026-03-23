@@ -26,6 +26,11 @@ interface WorkspaceState {
   activeAgent: AgentName | null
   isGenerating: boolean
 
+  // Approval
+  pendingFeatures: Array<{ text: string; approved: boolean }> | null
+  awaitingApproval: boolean
+  lastUserPrompt: string
+
   // Settings
   mode: WorkspaceMode
   model: ModelProvider
@@ -49,6 +54,10 @@ interface WorkspaceState {
   setPreviewDevice: (device: PreviewDevice) => void
   setShowConsole: (show: boolean) => void
   addTokens: (tokens: number) => void
+  setPendingFeatures: (features: Array<{ text: string; approved: boolean }> | null) => void
+  setAwaitingApproval: (v: boolean) => void
+  setLastUserPrompt: (prompt: string) => void
+  toggleFeatureApproval: (index: number) => void
   reset: () => void
 }
 
@@ -61,6 +70,9 @@ const initialState = {
   currentVersionNumber: 0,
   activeAgent: null as AgentName | null,
   isGenerating: false,
+  pendingFeatures: null as Array<{ text: string; approved: boolean }> | null,
+  awaitingApproval: false,
+  lastUserPrompt: '',
   mode: 'team' as WorkspaceMode,
   model: 'gemini' as ModelProvider,
   previewDevice: 'desktop' as PreviewDevice,
@@ -124,5 +136,17 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   setShowConsole: (show) => set({ showConsole: show }),
   addTokens: (tokens) =>
     set((state) => ({ tokensUsed: state.tokensUsed + tokens })),
+  setPendingFeatures: (features) => set({ pendingFeatures: features }),
+  setAwaitingApproval: (v) => set({ awaitingApproval: v }),
+  setLastUserPrompt: (prompt) => set({ lastUserPrompt: prompt }),
+  toggleFeatureApproval: (index) =>
+    set((state) => {
+      if (!state.pendingFeatures) return state
+      return {
+        pendingFeatures: state.pendingFeatures.map((f, i) =>
+          i === index ? { ...f, approved: !f.approved } : f
+        ),
+      }
+    }),
   reset: () => set(initialState),
 }))

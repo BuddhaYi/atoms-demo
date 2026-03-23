@@ -6,9 +6,10 @@ const FILES_START = ':::files'
 const FILES_END = ':::'
 const FEATURE_LIST_START = ':::feature_list'
 const ARCHITECTURE_START = ':::architecture'
+const REVIEW_START = ':::review'
 const BLOCK_END = ':::'
 
-type BlockType = 'files' | 'feature_list' | 'architecture' | null
+type BlockType = 'files' | 'feature_list' | 'architecture' | 'review' | null
 
 interface ParserState {
   currentAgent: AgentName | null
@@ -30,10 +31,7 @@ export function createStreamParser() {
       const events: StreamEvent[] = []
       state.buffer += chunk
 
-      // Process buffer line by line for block detection,
-      // but also handle streaming text within a line
       while (state.buffer.length > 0) {
-        // Check for block boundaries first
         if (state.inBlock === null) {
           // Check for agent tag
           const agentMatch = state.buffer.match(AGENT_TAG_REGEX)
@@ -69,20 +67,24 @@ export function createStreamParser() {
             state.buffer = state.buffer.slice(ARCHITECTURE_START.length).trimStart()
             continue
           }
+          if (state.buffer.startsWith(REVIEW_START)) {
+            state.inBlock = 'review'
+            state.blockContent = ''
+            state.buffer = state.buffer.slice(REVIEW_START.length).trimStart()
+            continue
+          }
 
-          // Regular text - emit as agent message
+          // Regular text - process lines first for agent tag detection
           const newlineIdx = state.buffer.indexOf('\n')
           if (newlineIdx >= 0) {
             const line = state.buffer.slice(0, newlineIdx + 1)
             state.buffer = state.buffer.slice(newlineIdx + 1)
 
-            // Skip empty lines or lines that are just whitespace
             const trimmed = line.trim()
             if (trimmed && state.currentAgent) {
               // Check if this line starts with an agent tag
               const lineAgentMatch = trimmed.match(AGENT_TAG_REGEX)
               if (lineAgentMatch && trimmed.indexOf(lineAgentMatch[0]) === 0) {
-                // Put it back and let the loop handle it
                 state.buffer = trimmed + '\n' + state.buffer
                 continue
               }
@@ -94,11 +96,27 @@ export function createStreamParser() {
               })
             }
           } else {
-            // No newline yet, wait for more data
+            // No newline yet — emit partial text for real-time streaming
+            // But only if it doesn't look like a potential agent tag or block start
+            const trimmed = state.buffer.trim()
+            if (
+              trimmed &&
+              state.currentAgent &&
+              !trimmed.startsWith('[') &&
+              !trimmed.startsWith(':::')
+            ) {
+              events.push({
+                type: 'agent_message',
+                agent: state.currentAgent,
+                content: trimmed,
+                content_type: 'text',
+              })
+              state.buffer = ''
+            }
             break
           }
-        } else {
-          // We're inside a block, accumulate until we find the closing :::
+        } else if (state.inBlock === 'files') {
+          // Files block: accumulate until closing ::: (need complete JSON)
           const newlineIdx = state.buffer.indexOf('\n')
           if (newlineIdx >= 0) {
             const line = state.buffer.slice(0, newlineIdx)
@@ -106,48 +124,59 @@ export function createStreamParser() {
 
             const trimmed = line.trim()
             if (trimmed === BLOCK_END && state.blockContent.length > 0) {
-              // End of block
-              const blockType = state.inBlock
-              const content = state.blockContent.trim()
               state.inBlock = null
+              const content = state.blockContent.trim()
               state.blockContent = ''
 
-              if (blockType === 'files' && state.currentAgent) {
-                try {
-                  const files = JSON.parse(content)
-                  events.push({ type: 'code_complete', files })
-                } catch {
-                  // Try to extract JSON from the content
-                  const jsonMatch = content.match(/\{[\s\S]*\}/)
-                  if (jsonMatch) {
-                    try {
-                      const files = JSON.parse(jsonMatch[0])
-                      events.push({ type: 'code_complete', files })
-                    } catch {
-                      events.push({
-                        type: 'error',
-                        message: 'Failed to parse generated code',
-                      })
-                    }
+              try {
+                const files = JSON.parse(content)
+                events.push({ type: 'code_complete', files })
+              } catch {
+                const jsonMatch = content.match(/\{[\s\S]*\}/)
+                if (jsonMatch) {
+                  try {
+                    const files = JSON.parse(jsonMatch[0])
+                    events.push({ type: 'code_complete', files })
+                  } catch {
+                    events.push({ type: 'error', message: 'Failed to parse generated code' })
                   }
                 }
-              } else if (blockType === 'feature_list' && state.currentAgent) {
-                events.push({
-                  type: 'agent_message',
-                  agent: state.currentAgent,
-                  content,
-                  content_type: 'feature_list',
-                })
-              } else if (blockType === 'architecture' && state.currentAgent) {
-                events.push({
-                  type: 'agent_message',
-                  agent: state.currentAgent,
-                  content,
-                  content_type: 'architecture',
-                })
               }
             } else {
               state.blockContent += line + '\n'
+            }
+          } else {
+            break
+          }
+        } else {
+          // feature_list, architecture, review blocks: stream lines progressively
+          const newlineIdx = state.buffer.indexOf('\n')
+          if (newlineIdx >= 0) {
+            const line = state.buffer.slice(0, newlineIdx)
+            state.buffer = state.buffer.slice(newlineIdx + 1)
+
+            const trimmed = line.trim()
+            if (trimmed === BLOCK_END && state.blockContent.length > 0) {
+              // Block complete
+              state.inBlock = null
+              state.blockContent = ''
+              // Final content already streamed line-by-line, no need to emit again
+            } else {
+              state.blockContent += line + '\n'
+              // Emit each line progressively for real-time display
+              if (trimmed && state.currentAgent) {
+                const contentType: ContentType = state.inBlock === 'feature_list'
+                  ? 'feature_list'
+                  : state.inBlock === 'review'
+                  ? 'review'
+                  : 'architecture'
+                events.push({
+                  type: 'agent_message',
+                  agent: state.currentAgent,
+                  content: trimmed,
+                  content_type: contentType,
+                })
+              }
             }
           } else {
             break
@@ -177,6 +206,16 @@ export function createStreamParser() {
             }
           }
         }
+      }
+
+      // Emit any remaining buffer text
+      if (state.buffer.trim() && state.currentAgent) {
+        events.push({
+          type: 'agent_message',
+          agent: state.currentAgent,
+          content: state.buffer.trim(),
+          content_type: 'text',
+        })
       }
 
       if (state.currentAgent) {

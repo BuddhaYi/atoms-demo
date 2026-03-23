@@ -90,6 +90,7 @@ export const en = {
   'agent.action.david': 'analyzing data',
   'agent.action.iris': 'researching',
   'agent.action.sarah': 'optimizing SEO',
+  'agent.action.reviewer': 'reviewing code',
 
   // Agent roles
   'agent.role.mike': 'Team Leader',
@@ -99,6 +100,7 @@ export const en = {
   'agent.role.david': 'Data Analyst',
   'agent.role.iris': 'Deep Researcher',
   'agent.role.sarah': 'SEO Specialist',
+  'agent.role.reviewer': 'Code Reviewer',
 
   // Agent descriptions
   'agent.desc.mike': 'Coordinates tasks and delegates to the right agent',
@@ -108,6 +110,7 @@ export const en = {
   'agent.desc.david': 'Handles data processing and visualization',
   'agent.desc.iris': 'Gathers information and research insights',
   'agent.desc.sarah': 'Optimizes for search engines and content strategy',
+  'agent.desc.reviewer': 'Reviews code quality, performance, and best practices',
 
   // Cards
   'card.requirements': 'Requirements',
@@ -119,4 +122,31 @@ export const en = {
   // SandpackPreview
   'sand.readyToBuild': 'Ready to Build',
   'sand.describePrompt': 'Describe what you want and the agents will build it',
+
+  // Review
+  'review.title': 'Code Review',
+  'review.button': 'Review',
+  'review.running': 'Reviewing...',
+  'review.quality': 'Code Quality',
+  'review.performance': 'Performance',
+  'review.accessibility': 'Accessibility',
+  'review.security': 'Security',
+  'review.overall': 'Overall',
+  'review.suggestions': 'Suggestions',
+  'review.noCode': 'Generate code first to run a review',
+
+  // Editor & Files
+  'prev.editor': 'Editor',
+  'prev.files': 'Files',
+  'files.fileCount': 'files',
+  'files.downloadAll': 'Download All',
+  'files.name': 'File Name',
+  'files.size': 'Size',
+  'files.lines': 'lines',
+
+  // Approval
+  'approval.approve': 'Approve',
+  'approval.editPlan': 'Edit Plan',
+  'approval.reviewHint': 'Review features and select what to implement',
+  'approval.implementing': 'Implementing approved features...',
 } as const

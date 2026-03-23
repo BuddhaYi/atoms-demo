@@ -136,13 +136,13 @@ export default function WorkspacePage() {
   return (
     <div className="h-screen flex flex-col">
       <TopBar onExport={handleExport} />
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden min-h-0">
         {/* Chat Panel - left 40% on desktop, full width on mobile */}
-        <div className="h-1/2 md:h-auto md:w-[40%] md:min-w-[320px] border-b md:border-b-0 md:border-r border-border flex flex-col">
+        <div className="h-1/2 md:h-auto md:w-[40%] md:min-w-[320px] border-b md:border-b-0 md:border-r border-border flex flex-col min-h-0">
           <ChatPanel />
         </div>
         {/* Preview Panel - right 60% on desktop, full width on mobile */}
-        <div className="h-1/2 md:h-auto flex-1 flex flex-col">
+        <div className="h-1/2 md:h-auto flex-1 flex flex-col min-h-0">
           <PreviewPanel />
         </div>
       </div>

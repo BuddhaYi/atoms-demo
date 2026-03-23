@@ -1,54 +1,57 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import type { User } from '@supabase/supabase-js'
+
+interface AuthUser {
+  id: string
+  email: string
+  displayName: string
+}
 
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
-  const supabase = createClient()
 
   useEffect(() => {
-    if (!supabase) {
-      setLoading(false)
-      return
-    }
-
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user)
-      setLoading(false)
-    })
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-    })
-
-    return () => subscription.unsubscribe()
-  }, [supabase])
+    fetch('/api/auth/me')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setUser(data))
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false))
+  }, [])
 
   const signIn = useCallback(async (email: string, password: string) => {
-    if (!supabase) throw new Error('Supabase not configured')
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) throw error
-  }, [supabase])
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    })
+    if (!res.ok) {
+      const data = await res.json()
+      throw new Error(data.error || 'Login failed')
+    }
+    const data = await res.json()
+    setUser(data)
+  }, [])
 
   const signUp = useCallback(async (email: string, password: string, displayName?: string) => {
-    if (!supabase) throw new Error('Supabase not configured')
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { display_name: displayName || email.split('@')[0] },
-      },
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, displayName }),
     })
-    if (error) throw error
-  }, [supabase])
+    if (!res.ok) {
+      const data = await res.json()
+      throw new Error(data.error || 'Registration failed')
+    }
+    const data = await res.json()
+    setUser(data)
+  }, [])
 
   const signOut = useCallback(async () => {
-    if (!supabase) return
-    await supabase.auth.signOut()
-  }, [supabase])
+    await fetch('/api/auth/logout', { method: 'POST' })
+    setUser(null)
+  }, [])
 
   return {
     user,
@@ -57,6 +60,5 @@ export function useAuth() {
     signUp,
     signOut,
     isAuthenticated: !!user,
-    supabaseConfigured: !!supabase,
   }
 }

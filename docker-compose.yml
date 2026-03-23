@@ -21,6 +21,7 @@ services:
       - .env.local
     environment:
       DATABASE_URL: postgresql://atoms:atoms_dev_password@postgres:5432/atoms
+      JWT_SECRET: ${JWT_SECRET:-atoms-docker-jwt-secret-change-in-production}
     depends_on:
       postgres:
         condition: service_healthy

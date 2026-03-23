@@ -7,11 +7,53 @@ import {
 } from '@codesandbox/sandpack-react'
 import type { PreviewDevice } from '@/types'
 
+/* Force Sandpack internals to fill parent via absolute positioning */
+const SANDPACK_STYLES = `
+.sp-preview-fill .sp-overlay { display: none !important; }
+.sp-preview-fill,
+.sp-preview-fill .sp-wrapper,
+.sp-preview-fill .sp-layout,
+.sp-preview-fill .sp-preview,
+.sp-preview-fill .sp-preview-container {
+  position: absolute !important;
+  inset: 0 !important;
+  height: 100% !important;
+  width: 100% !important;
+}
+.sp-preview-fill .sp-layout {
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+.sp-preview-fill .sp-preview-iframe {
+  height: 100% !important;
+  width: 100% !important;
+}
+.sp-preview-fill .sp-preview-actions {
+  position: absolute !important;
+  bottom: 8px !important;
+  right: 8px !important;
+  z-index: 10 !important;
+}
+/* Make provider wrapper participate in flex layout */
+.sp-unified > .sp-wrapper {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+}
+.sp-unified > .sp-wrapper > .sp-stack {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+}
+`
+
 interface SandpackPreviewProps {
   files: Record<string, string>
   device: PreviewDevice
   showConsole: boolean
-  onConsoleError?: (error: string) => void
 }
 
 export function SandpackPreview({
@@ -19,14 +61,12 @@ export function SandpackPreview({
   device,
   showConsole,
 }: SandpackPreviewProps) {
-  // Transform file keys to ensure they start with /
   const sandpackFiles: Record<string, string> = {}
   for (const [key, value] of Object.entries(files)) {
     const normalizedKey = key.startsWith('/') ? key : `/${key}`
     sandpackFiles[normalizedKey] = value
   }
 
-  // Ensure we have at minimum an App.js
   if (!sandpackFiles['/App.js'] && !sandpackFiles['/App.tsx']) {
     sandpackFiles['/App.js'] = `export default function App() {
   return (
@@ -40,50 +80,57 @@ export function SandpackPreview({
 }`
   }
 
+  const providerProps = {
+    template: 'react' as const,
+    files: sandpackFiles,
+    customSetup: {
+      dependencies: {
+        recharts: '2.15.0',
+        'lucide-react': '0.460.0',
+        'date-fns': '4.1.0',
+      },
+    },
+    options: {
+      externalResources: ['https://cdn.tailwindcss.com'],
+    },
+    theme: 'auto' as const,
+  }
+
   return (
-    <div className="h-full flex flex-col sandpack-container">
-      {/* Hide stuck Sandpack loading overlay - content renders fine behind it */}
-      <style>{`.sandpack-container .sp-overlay { display: none !important; }`}</style>
-      <div
-        className="flex-1 overflow-hidden"
-        style={{
-          maxWidth: device === 'mobile' ? '375px' : '100%',
-          margin: device === 'mobile' ? '0 auto' : undefined,
-          border: device === 'mobile' ? '8px solid #1f2937' : undefined,
-          borderRadius: device === 'mobile' ? '32px' : undefined,
-          padding: device === 'mobile' ? '0' : undefined,
-        }}
-      >
-        <SandpackProvider
-          template="react"
-          files={sandpackFiles}
-          customSetup={{
-            dependencies: {
-              recharts: '2.15.0',
-              'lucide-react': '0.460.0',
-              'date-fns': '4.1.0',
-            },
+    <div className="h-full flex flex-col min-h-0 sp-unified">
+      <style>{SANDPACK_STYLES}</style>
+
+      <SandpackProvider {...providerProps}>
+        {/* Preview - fills available space */}
+        <div
+          className="flex-1 min-h-0 relative"
+          style={{
+            maxWidth: device === 'mobile' ? '375px' : undefined,
+            margin: device === 'mobile' ? '0 auto' : undefined,
+            border: device === 'mobile' ? '8px solid #1f2937' : undefined,
+            borderRadius: device === 'mobile' ? '32px' : undefined,
+            overflow: 'hidden',
+            width: device === 'mobile' ? '375px' : '100%',
           }}
-          options={{
-            externalResources: ['https://cdn.tailwindcss.com'],
-          }}
-          theme="auto"
         >
-          <SandpackPreviewComponent
-            style={{ height: '100%', minHeight: '400px' }}
-            showOpenInCodeSandbox={false}
-            showRefreshButton={true}
-          />
-          {showConsole && (
-            <div className="h-40 border-t border-border">
-              <SandpackConsole
-                style={{ height: '100%' }}
-                showHeader={true}
-              />
-            </div>
-          )}
-        </SandpackProvider>
-      </div>
+          <div className="absolute inset-0 sp-preview-fill">
+            <SandpackPreviewComponent
+              showOpenInCodeSandbox={false}
+              showRefreshButton={true}
+            />
+          </div>
+        </div>
+
+        {/* Console - fixed height panel at bottom, SAME provider as preview */}
+        {showConsole && (
+          <div className="h-48 min-h-[192px] border-t border-border shrink-0">
+            <SandpackConsole
+              style={{ height: '100%' }}
+              showHeader={true}
+            />
+          </div>
+        )}
+      </SandpackProvider>
     </div>
   )
 }

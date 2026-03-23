@@ -1,6 +1,15 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getAuthUser } from '@/lib/auth'
 import type { Prisma } from '@prisma/client'
+
+async function verifyOwnership(projectId: string) {
+  const user = await getAuthUser()
+  if (!user) return null
+  const project = await prisma.project.findUnique({ where: { id: projectId } })
+  if (!project || project.userId !== user.id) return null
+  return user
+}
 
 export async function GET(
   _request: Request,
@@ -8,6 +17,11 @@ export async function GET(
 ) {
   try {
     const { id } = await params
+    const owner = await verifyOwnership(id)
+    if (!owner) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
     const versions = await prisma.codeVersion.findMany({
       where: { projectId: id },
       orderBy: { versionNumber: 'asc' },
@@ -27,6 +41,11 @@ export async function POST(
 ) {
   try {
     const { id } = await params
+    const owner = await verifyOwnership(id)
+    if (!owner) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
     const body = await request.json()
     const versions: Array<{
       id: string

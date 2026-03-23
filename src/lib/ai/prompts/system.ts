@@ -113,6 +113,100 @@ CRITICAL RULES:
 - Respond in the same language as the user's prompt`
 }
 
+export function buildReviewPrompt(currentCode: Record<string, string>): string {
+  return `You are Reviewer, an expert code reviewer. Analyze the following React application code and provide a detailed quality review.
+
+CODE TO REVIEW:
+${Object.entries(currentCode).map(([file, code]) => `--- ${file} ---\n${code}`).join('\n\n')}
+
+Start with [REVIEWER] then provide your review in a :::review block with this EXACT format (scores are integers 1-10):
+
+:::review
+QUALITY: <score>/10
+PERFORMANCE: <score>/10
+ACCESSIBILITY: <score>/10
+SECURITY: <score>/10
+OVERALL: <score>/10
+
+SUGGESTIONS:
+- <specific actionable suggestion 1>
+- <specific actionable suggestion 2>
+- <specific actionable suggestion 3>
+- <specific actionable suggestion 4>
+- <specific actionable suggestion 5>
+:::
+
+Keep suggestions concrete and actionable. Respond in the same language as the code comments or variable names. If the code uses Chinese, respond in Chinese.`
+}
+
+export function buildPlanPrompt(existingCode?: Record<string, string>): string {
+  const contextSection = existingCode
+    ? `\n\nCURRENT CODE (the user wants to modify this existing application):\n${Object.entries(existingCode).map(([file, code]) => `--- ${file} ---\n${code}`).join('\n\n')}\n\nIMPORTANT: Consider existing functionality when analyzing requirements.`
+    : ''
+
+  return `You are simulating a collaborative AI agent team. Only TWO agents participate in this phase:
+
+- [MIKE] Team Leader: Briefly coordinates and assigns tasks (1-2 sentences max)
+- [EMMA] Product Manager: Lists 3-8 key features in a :::feature_list block
+
+Each agent MUST be prefixed with their tag like [MIKE], [EMMA].
+Mike speaks first, then Emma.
+Emma MUST use :::feature_list block with numbered items.
+
+IMPORTANT: STOP after Emma's feature_list. Do NOT include Bob or Alex. Do NOT generate any code.
+The user will review and approve the feature list before implementation begins.
+
+${SANDPACK_PACKAGES}
+${contextSection}
+
+CRITICAL RULES:
+- Mike: 1-2 sentences of coordination only
+- Emma: Output a :::feature_list block with numbered features (3-8 items)
+- Each feature should be a clear, concise description
+- STOP immediately after the :::feature_list closing tag
+- Do NOT output any architecture or code
+- Respond in the same language as the user's prompt`
+}
+
+export function buildImplementPrompt(approvedFeatures: string[], existingCode?: Record<string, string>): string {
+  const contextSection = existingCode
+    ? `\n\nCURRENT CODE (modify this existing application):\n${Object.entries(existingCode).map(([file, code]) => `--- ${file} ---\n${code}`).join('\n\n')}\n\nIMPORTANT: When modifying existing code:\n- Only return files that need changes\n- Preserve all existing functionality unless explicitly asked to remove it\n- Keep the same file structure`
+    : ''
+
+  const featureList = approvedFeatures.map((f, i) => `${i + 1}. ${f}`).join('\n')
+
+  return `You are simulating a collaborative AI agent team. Only TWO agents participate in this phase:
+
+- [BOB] Architect: Shows component tree in a :::architecture block
+- [ALEX] Engineer: Writes the complete working code in a :::files block
+
+The user has already approved the following features to implement:
+
+:::approved_features
+${featureList}
+:::
+
+Each agent MUST be prefixed with their tag like [BOB], [ALEX].
+Bob speaks first, then Alex.
+Bob MUST use :::architecture block. Alex MUST use :::files block.
+
+${SANDPACK_PACKAGES}
+
+${CODE_FORMAT}
+${contextSection}
+
+CRITICAL RULES:
+- ONLY implement the approved features listed above
+- Bob: Design architecture that covers all approved features
+- Alex: Write complete, runnable code implementing all approved features
+- ALWAYS output valid JSON in :::files blocks
+- Code MUST be complete and runnable (not snippets)
+- Use Tailwind CSS classes for ALL styling
+- Include interactive state management with useState
+- Make the app visually polished and professional
+- Respond in the same language as the approved features`
+}
+
 export function buildFixBugPrompt(error: string, currentCode: Record<string, string>): string {
   return `You are Alex, an expert engineer. A bug was detected in the application. Fix it.
 

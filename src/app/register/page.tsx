@@ -15,8 +15,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [success, setSuccess] = useState(false)
-  const { signUp, supabaseConfigured } = useAuth()
+  const { signUp } = useAuth()
   const router = useRouter()
   const { t } = useTranslation()
 
@@ -27,46 +26,12 @@ export default function RegisterPage() {
 
     try {
       await signUp(email, password, displayName)
-      setSuccess(true)
+      router.push('/')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to sign up')
     } finally {
       setIsLoading(false)
     }
-  }
-
-  if (!supabaseConfigured) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/30">
-        <div className="w-full max-w-sm p-6 text-center">
-          <Sparkles className="w-10 h-10 text-primary mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-2">{t('login.authNotConfigured')}</h1>
-          <p className="text-muted-foreground mb-4">
-            {t('login.supabaseNotSet')}
-          </p>
-          <Link href="/">
-            <Button className="w-full">{t('login.continueWithoutAuth')}</Button>
-          </Link>
-        </div>
-      </div>
-    )
-  }
-
-  if (success) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/30">
-        <div className="w-full max-w-sm bg-card border border-border rounded-2xl shadow-lg p-6 text-center">
-          <Sparkles className="w-10 h-10 text-primary mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-2">{t('reg.checkEmail')}</h1>
-          <p className="text-muted-foreground mb-4">
-            {t('reg.sentConfirmation')} <strong>{email}</strong>
-          </p>
-          <Link href="/login">
-            <Button variant="outline" className="w-full">{t('reg.backToLogin')}</Button>
-          </Link>
-        </div>
-      </div>
-    )
   }
 
   return (

@@ -4,13 +4,15 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { apiClient, type ApiProject } from '@/lib/api-client'
 import { Button } from '@/components/ui/button'
-import { Sparkles, Plus, Trash2, FolderOpen } from 'lucide-react'
+import { Sparkles, Plus, Trash2, FolderOpen, LogOut } from 'lucide-react'
+import { useAuth } from '@/hooks/useAuth'
 import { useTranslation } from '@/hooks/useTranslation'
 import Link from 'next/link'
 
 export default function DashboardPage() {
   const [projects, setProjects] = useState<ApiProject[]>([])
   const router = useRouter()
+  const { user, signOut } = useAuth()
   const { t, locale, setLocale } = useTranslation()
 
   useEffect(() => {
@@ -56,6 +58,16 @@ export default function DashboardPage() {
               {t('dash.newProject')}
             </Button>
           </Link>
+          {user && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={async () => { await signOut(); router.push('/login') }}
+            >
+              <LogOut className="w-4 h-4 mr-1" />
+              {user.displayName || user.email.split('@')[0]}
+            </Button>
+          )}
         </div>
       </nav>
 

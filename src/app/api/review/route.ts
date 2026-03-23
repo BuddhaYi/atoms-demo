@@ -1,7 +1,7 @@
-import { buildSystemPrompt, buildFixBugPrompt, buildPlanPrompt, buildImplementPrompt } from '@/lib/ai/prompts/system'
+import { buildReviewPrompt } from '@/lib/ai/prompts/system'
 import { streamFromModel } from '@/lib/ai/model-router'
 import { createStreamParser } from '@/lib/agents/stream-parser'
-import type { ModelProvider, WorkspaceMode, StreamEvent } from '@/types'
+import type { ModelProvider, StreamEvent } from '@/types'
 
 export const runtime = 'edge'
 
@@ -9,40 +9,19 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
     const {
-      message,
-      mode = 'team' as WorkspaceMode,
+      code,
       model = 'claude' as ModelProvider,
-      existingCode,
-      history = [],
-      fixBug,
-      error: bugError,
-      phase,
-      approvedFeatures,
     } = body
 
-    if (!message && !fixBug) {
-      return new Response(JSON.stringify({ error: 'Message is required' }), {
+    if (!code || Object.keys(code).length === 0) {
+      return new Response(JSON.stringify({ error: 'No code to review' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       })
     }
 
-    let systemPrompt: string
-    if (fixBug) {
-      systemPrompt = buildFixBugPrompt(bugError || '', existingCode || {})
-    } else if (phase === 'plan') {
-      systemPrompt = buildPlanPrompt(existingCode)
-    } else if (phase === 'implement' && Array.isArray(approvedFeatures)) {
-      systemPrompt = buildImplementPrompt(approvedFeatures, existingCode)
-    } else {
-      systemPrompt = buildSystemPrompt(mode, existingCode)
-    }
-
-    const userMessage = fixBug
-      ? `Fix this error: ${bugError}`
-      : message
-
-    const llmStream = await streamFromModel(model, systemPrompt, userMessage, history)
+    const systemPrompt = buildReviewPrompt(code)
+    const llmStream = await streamFromModel(model, systemPrompt, 'Review this code', [])
     const parser = createStreamParser()
     const reader = llmStream.getReader()
     const encoder = new TextEncoder()
@@ -81,7 +60,7 @@ export async function POST(request: Request) {
       },
     })
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Internal server error'
+    const message = err instanceof Error ? err.message : 'Review failed'
     const errorEvent: StreamEvent = { type: 'error', message }
     const encoder = new TextEncoder()
 

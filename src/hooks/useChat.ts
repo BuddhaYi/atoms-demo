@@ -4,12 +4,26 @@ import { useCallback, useRef } from 'react'
 import { useWorkspaceStore } from '@/store/workspace-store'
 import type { ChatMessage, StreamEvent, AgentName } from '@/types'
 
+function parseFeatureList(content: string): string[] {
+  return content
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .map((line) => line.replace(/^\d+\.\s*/, ''))
+}
+
+interface SendOptions {
+  error?: string
+  phase?: 'plan' | 'implement'
+  approvedFeatures?: string[]
+}
+
 export function useChat() {
   const store = useWorkspaceStore()
   const abortRef = useRef<AbortController | null>(null)
 
   const sendMessage = useCallback(
-    async (message: string, fixBug?: { error: string }) => {
+    async (message: string, options?: SendOptions) => {
       const {
         mode,
         model,
@@ -21,10 +35,17 @@ export function useChat() {
         addMessage,
         mergeCode,
         addVersion,
+        setPendingFeatures,
+        setAwaitingApproval,
+        setLastUserPrompt,
       } = useWorkspaceStore.getState()
 
-      // Add user message
-      if (!fixBug) {
+      const fixBug = options?.error ? { error: options.error } : undefined
+      const phase = options?.phase
+      const approvedFeatures = options?.approvedFeatures
+
+      // Add user message (skip for fixBug and implement phase)
+      if (!fixBug && phase !== 'implement') {
         const userMsg: ChatMessage = {
           id: crypto.randomUUID(),
           project_id: '',
@@ -35,9 +56,14 @@ export function useChat() {
           created_at: new Date().toISOString(),
         }
         addMessage(userMsg)
+        setLastUserPrompt(message)
       }
 
       setIsGenerating(true)
+
+      // Determine phase: team mode + new message (not fixBug, not already phased, no existing code) → plan
+      const hasExistingCode = Object.keys(currentCode).length > 0
+      const effectivePhase = phase || (mode === 'team' && !fixBug && !hasExistingCode ? 'plan' : undefined)
 
       // Build history from recent messages (last 10 for context, save tokens)
       const recentMessages = messages.slice(-10)
@@ -52,6 +78,10 @@ export function useChat() {
 
       abortRef.current = new AbortController()
 
+      // Track if we saw a feature_list in this stream (for plan phase auto-pause)
+      let sawFeatureList = false
+      let featureListContent = ''
+
       try {
         const response = await fetch('/api/chat', {
           method: 'POST',
@@ -64,6 +94,8 @@ export function useChat() {
             history,
             fixBug: !!fixBug,
             error: fixBug?.error,
+            phase: effectivePhase,
+            approvedFeatures,
           }),
           signal: abortRef.current.signal,
         })
@@ -113,6 +145,12 @@ export function useChat() {
                 }
 
                 case 'agent_message': {
+                  // Track feature_list content for plan phase
+                  if (event.content_type === 'feature_list' && effectivePhase === 'plan') {
+                    sawFeatureList = true
+                    featureListContent += (featureListContent ? '\n' : '') + event.content
+                  }
+
                   // Update the last agent message with content
                   const state = useWorkspaceStore.getState()
                   const msgs = [...state.messages]
@@ -199,9 +237,23 @@ export function useChat() {
             }
           }
         }
+
+        // After stream ends: if plan phase and we saw feature_list, pause for approval
+        if (effectivePhase === 'plan' && sawFeatureList && featureListContent) {
+          const features = parseFeatureList(featureListContent)
+          if (features.length > 0) {
+            setPendingFeatures(features.map((text) => ({ text, approved: true })))
+            setAwaitingApproval(true)
+          }
+        }
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') {
           return
+        }
+        // Clear approval state on error during plan phase
+        if (effectivePhase === 'plan') {
+          setPendingFeatures(null)
+          setAwaitingApproval(false)
         }
         const errMsg: ChatMessage = {
           id: crypto.randomUUID(),
@@ -221,11 +273,39 @@ export function useChat() {
     []
   )
 
+  const approveFeatures = useCallback(async () => {
+    const state = useWorkspaceStore.getState()
+    const { pendingFeatures, lastUserPrompt, isGenerating } = state
+
+    if (!pendingFeatures || !lastUserPrompt?.trim() || isGenerating) return
+
+    const approved = pendingFeatures
+      .filter((f) => f.approved)
+      .map((f) => f.text)
+
+    if (approved.length === 0) return
+
+    // Clear approval state
+    state.setAwaitingApproval(false)
+    state.setPendingFeatures(null)
+
+    // Trigger Phase 2 with approved features
+    await sendMessage(lastUserPrompt, {
+      phase: 'implement',
+      approvedFeatures: approved,
+    })
+  }, [sendMessage])
+
   const stopGeneration = useCallback(() => {
     abortRef.current?.abort()
     useWorkspaceStore.getState().setIsGenerating(false)
     useWorkspaceStore.getState().setActiveAgent(null)
   }, [])
 
-  return { sendMessage, stopGeneration, isGenerating: store.isGenerating }
+  return {
+    sendMessage,
+    approveFeatures,
+    stopGeneration,
+    isGenerating: store.isGenerating,
+  }
 }

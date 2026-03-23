@@ -1,5 +1,5 @@
 // Agent types
-export type AgentName = 'mike' | 'emma' | 'bob' | 'alex' | 'david' | 'iris' | 'sarah'
+export type AgentName = 'mike' | 'emma' | 'bob' | 'alex' | 'david' | 'iris' | 'sarah' | 'reviewer'
 
 export interface Agent {
   name: AgentName
@@ -42,7 +42,7 @@ export interface CodeVersion {
 }
 
 // Chat message
-export type ContentType = 'text' | 'feature_list' | 'architecture' | 'code' | 'data_insight'
+export type ContentType = 'text' | 'feature_list' | 'architecture' | 'code' | 'data_insight' | 'review'
 
 export interface ChatMessage {
   id: string

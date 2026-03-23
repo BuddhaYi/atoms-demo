@@ -57,6 +57,14 @@ export const AGENTS: Record<AgentName, Agent> = {
     color: '#DDA0DD',
     description: 'Optimizes for search engines and content strategy',
   },
+  reviewer: {
+    name: 'reviewer',
+    displayName: 'Reviewer',
+    role: 'Code Reviewer',
+    emoji: '✅',
+    color: '#00D084',
+    description: 'Reviews code quality, performance, and best practices',
+  },
 }
 
 export const AGENT_NAMES = Object.keys(AGENTS) as AgentName[]

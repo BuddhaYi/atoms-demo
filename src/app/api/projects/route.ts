@@ -1,9 +1,15 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getAuthUser } from '@/lib/auth'
 
 export async function GET() {
   try {
+    const user = await getAuthUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+    }
     const projects = await prisma.project.findMany({
+      where: { userId: user.id },
       orderBy: { updatedAt: 'desc' },
       select: {
         id: true,
@@ -26,12 +32,18 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const user = await getAuthUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+    }
+
     const body = await request.json()
     const { id, title, description, category, status } = body
 
     const project = await prisma.project.create({
       data: {
         ...(id ? { id } : {}),
+        userId: user.id,
         title: title || 'Untitled Project',
         description: description || '',
         category: category || '',

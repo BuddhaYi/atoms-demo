@@ -90,6 +90,7 @@ export const zh = {
   'agent.action.david': '分析数据',
   'agent.action.iris': '深度调研',
   'agent.action.sarah': '优化 SEO',
+  'agent.action.reviewer': '审查代码',
 
   // Agent roles
   'agent.role.mike': '团队负责人',
@@ -99,6 +100,7 @@ export const zh = {
   'agent.role.david': '数据分析师',
   'agent.role.iris': '深度研究员',
   'agent.role.sarah': 'SEO 专家',
+  'agent.role.reviewer': '代码审查员',
 
   // Agent descriptions
   'agent.desc.mike': '协调任务并分配给合适的智能体',
@@ -108,6 +110,7 @@ export const zh = {
   'agent.desc.david': '处理数据处理和可视化',
   'agent.desc.iris': '收集信息和研究洞察',
   'agent.desc.sarah': '优化搜索引擎和内容策略',
+  'agent.desc.reviewer': '审查代码质量、性能和最佳实践',
 
   // Cards
   'card.requirements': '需求分析',
@@ -119,4 +122,31 @@ export const zh = {
   // SandpackPreview
   'sand.readyToBuild': '准备就绪',
   'sand.describePrompt': '描述你的需求，AI 智能体团队将为你构建',
+
+  // Review
+  'review.title': '代码审查',
+  'review.button': '审查',
+  'review.running': '审查中...',
+  'review.quality': '代码质量',
+  'review.performance': '性能',
+  'review.accessibility': '可访问性',
+  'review.security': '安全性',
+  'review.overall': '综合评分',
+  'review.suggestions': '改进建议',
+  'review.noCode': '请先生成代码再进行审查',
+
+  // Editor & Files
+  'prev.editor': '编辑者',
+  'prev.files': '文件',
+  'files.fileCount': '个文件',
+  'files.downloadAll': '下载全部',
+  'files.name': '文件名',
+  'files.size': '大小',
+  'files.lines': '行',
+
+  // Approval
+  'approval.approve': '批准',
+  'approval.editPlan': '编辑计划',
+  'approval.reviewHint': '请审阅功能特性，并选择要实现的功能',
+  'approval.implementing': '正在实现已批准的功能...',
 } as const

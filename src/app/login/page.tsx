@@ -14,7 +14,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const { signIn, supabaseConfigured } = useAuth()
+  const { signIn } = useAuth()
   const router = useRouter()
   const { t } = useTranslation()
 
@@ -31,23 +31,6 @@ export default function LoginPage() {
     } finally {
       setIsLoading(false)
     }
-  }
-
-  if (!supabaseConfigured) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/30">
-        <div className="w-full max-w-sm p-6 text-center">
-          <Sparkles className="w-10 h-10 text-primary mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-2">{t('login.authNotConfigured')}</h1>
-          <p className="text-muted-foreground mb-4">
-            {t('login.supabaseNotSet')}
-          </p>
-          <Link href="/">
-            <Button className="w-full">{t('login.continueWithoutAuth')}</Button>
-          </Link>
-        </div>
-      </div>
-    )
   }
 
   return (

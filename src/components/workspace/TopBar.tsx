@@ -73,30 +73,25 @@ export function TopBar({ onExport }: TopBarProps) {
 
         {/* Model toggle */}
         <div className="flex items-center bg-muted rounded-lg p-0.5">
-          <Button
-            variant={model === 'claude' ? 'secondary' : 'ghost'}
-            size="sm"
-            onClick={() => setModel('claude')}
-            className="h-7 text-xs"
-          >
-            Claude
-          </Button>
-          <Button
-            variant={model === 'gemini' ? 'secondary' : 'ghost'}
-            size="sm"
-            onClick={() => setModel('gemini')}
-            className="h-7 text-xs"
-          >
-            Gemini
-          </Button>
-          <Button
-            variant={model === 'openai' ? 'secondary' : 'ghost'}
-            size="sm"
-            onClick={() => setModel('openai')}
-            className="h-7 text-xs"
-          >
-            GPT-4o
-          </Button>
+          {([
+            { key: 'claude' as const, label: 'Claude' },
+            { key: 'gemini' as const, label: 'Gemini' },
+            { key: 'openai' as const, label: 'GPT-4o' },
+          ]).map(({ key, label }) => (
+            <Button
+              key={key}
+              variant="ghost"
+              size="sm"
+              onClick={() => setModel(key)}
+              className={`h-7 text-xs ${
+                model === key
+                  ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400 hover:bg-amber-500/25'
+                  : ''
+              }`}
+            >
+              {label}
+            </Button>
+          ))}
         </div>
 
         {tokensUsed > 0 && (

@@ -7,8 +7,21 @@ generator client {
   provider = "prisma-client-js"
 }
 
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  displayName  String   @default("") @map("display_name")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  projects Project[]
+
+  @@map("users")
+}
+
 model Project {
   id          String   @id @default(cuid())
+  userId      String   @map("user_id")
   title       String   @default("Untitled Project")
   description String   @default("")
   category    String   @default("")
@@ -16,6 +29,7 @@ model Project {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages ChatMessage[]
   versions CodeVersion[]
 

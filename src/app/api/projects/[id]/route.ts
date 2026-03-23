@@ -1,11 +1,17 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getAuthUser } from '@/lib/auth'
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await getAuthUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+    }
+
     const { id } = await params
     const project = await prisma.project.findUnique({
       where: { id },
@@ -13,7 +19,7 @@ export async function GET(
         _count: { select: { versions: true, messages: true } },
       },
     })
-    if (!project) {
+    if (!project || project.userId !== user.id) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
     return NextResponse.json(project)
@@ -30,7 +36,17 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await getAuthUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+    }
+
     const { id } = await params
+    const project = await prisma.project.findUnique({ where: { id } })
+    if (!project || project.userId !== user.id) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
     await prisma.project.delete({ where: { id } })
     return NextResponse.json({ success: true })
   } catch (error) {
