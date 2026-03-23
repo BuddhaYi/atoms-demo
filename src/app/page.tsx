@@ -7,17 +7,19 @@ import { Textarea } from '@/components/ui/textarea'
 import { ArrowRight, Sparkles, FolderOpen } from 'lucide-react'
 import { AGENTS } from '@/lib/agents/registry'
 import { localDB } from '@/lib/local-storage'
+import { useTranslation } from '@/hooks/useTranslation'
+import type { TranslationKey } from '@/i18n'
 import Link from 'next/link'
 
-const CATEGORIES = [
-  { label: 'AI Tool', emoji: '🤖', prompt: 'Build an AI-powered writing assistant with a text editor, tone selector, and generate/improve buttons' },
-  { label: 'Internal Tool', emoji: '🔧', prompt: 'Build an internal employee directory with search, filtering by department, and profile cards' },
-  { label: 'SaaS', emoji: '💼', prompt: 'Create a project management dashboard with task boards, team members, and progress tracking' },
-  { label: 'Dashboard', emoji: '📊', prompt: 'Build an analytics dashboard with KPI cards, line charts, bar charts, and a data table' },
-  { label: 'E-commerce', emoji: '🛒', prompt: 'Create an e-commerce product page with image gallery, size selector, reviews, and add to cart' },
-  { label: 'Game', emoji: '🎮', prompt: 'Build a fun memory card matching game with score tracking and difficulty levels' },
-  { label: 'Landing Page', emoji: '🚀', prompt: 'Design a modern SaaS landing page with hero section, features grid, pricing table, and testimonials' },
-]
+const CATEGORY_KEYS = [
+  { key: 'aiTool', emoji: '🤖' },
+  { key: 'internalTool', emoji: '🔧' },
+  { key: 'saas', emoji: '💼' },
+  { key: 'dashboard', emoji: '📊' },
+  { key: 'ecommerce', emoji: '🛒' },
+  { key: 'game', emoji: '🎮' },
+  { key: 'landingPage', emoji: '🚀' },
+] as const
 
 const agentList = Object.values(AGENTS)
 
@@ -25,6 +27,7 @@ export default function HomePage() {
   const [prompt, setPrompt] = useState('')
   const [isCreating, setIsCreating] = useState(false)
   const router = useRouter()
+  const { t, locale, setLocale } = useTranslation()
 
   const handleStart = async (inputPrompt?: string) => {
     const finalPrompt = inputPrompt || prompt
@@ -33,7 +36,6 @@ export default function HomePage() {
     setIsCreating(true)
     const projectId = `p_${Date.now()}`
 
-    // Save to localStorage for persistence
     localDB.createProject({
       id: projectId,
       title: finalPrompt.trim().slice(0, 50),
@@ -55,12 +57,32 @@ export default function HomePage() {
           <span className="text-xl font-bold tracking-tight">Atoms</span>
           <span className="text-sm text-muted-foreground">Demo</span>
         </div>
-        <Link href="/dashboard">
-          <Button variant="ghost" size="sm">
-            <FolderOpen className="w-4 h-4 mr-2" />
-            Projects
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center bg-muted rounded-lg p-0.5">
+            <Button
+              variant={locale === 'en' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setLocale('en')}
+              className="h-7 text-xs"
+            >
+              EN
+            </Button>
+            <Button
+              variant={locale === 'zh' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setLocale('zh')}
+              className="h-7 text-xs"
+            >
+              中文
+            </Button>
+          </div>
+          <Link href="/dashboard">
+            <Button variant="ghost" size="sm">
+              <FolderOpen className="w-4 h-4 mr-2" />
+              {t('home.projects')}
+            </Button>
+          </Link>
+        </div>
       </nav>
 
       {/* Hero */}
@@ -72,7 +94,7 @@ export default function HomePage() {
               key={agent.name}
               className="w-12 h-12 rounded-full flex items-center justify-center text-xl transition-transform hover:scale-110 cursor-default"
               style={{ backgroundColor: agent.color + '20' }}
-              title={`${agent.displayName} - ${agent.role}`}
+              title={`${agent.displayName} - ${t(`agent.role.${agent.name}` as TranslationKey)}`}
             >
               {agent.emoji}
             </div>
@@ -80,13 +102,13 @@ export default function HomePage() {
         </div>
 
         <h1 className="text-4xl md:text-5xl font-bold text-center mb-4 tracking-tight">
-          Turn Ideas into{' '}
+          {t('home.title.prefix')}{' '}
           <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-            Working Apps
+            {t('home.title.highlight')}
           </span>
         </h1>
         <p className="text-center text-muted-foreground text-lg mb-10">
-          AI agents collaborate to build your app in minutes. No coding required.
+          {t('home.subtitle')}
         </p>
 
         {/* Input */}
@@ -94,7 +116,7 @@ export default function HomePage() {
           <Textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Build an analytics dashboard with interactive charts and data tables..."
+            placeholder={t('home.placeholder')}
             className="min-h-[100px] text-base border-0 shadow-none resize-none focus-visible:ring-0 bg-transparent"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
@@ -110,7 +132,7 @@ export default function HomePage() {
               size="lg"
               className="rounded-xl"
             >
-              {isCreating ? 'Creating...' : 'Start Building'}
+              {isCreating ? t('home.creating') : t('home.startBuilding')}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
@@ -119,29 +141,33 @@ export default function HomePage() {
         {/* Category Chips */}
         <div className="mb-8">
           <p className="text-sm text-muted-foreground mb-3 text-center">
-            What do you want to build?
+            {t('home.whatToBuild')}
           </p>
           <div className="flex flex-wrap justify-center gap-2">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat.label}
-                onClick={() => {
-                  setPrompt(cat.prompt)
-                  handleStart(cat.prompt)
-                }}
-                disabled={isCreating}
-                className="flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-card hover:bg-accent transition-colors text-sm"
-              >
-                <span>{cat.emoji}</span>
-                <span>{cat.label}</span>
-              </button>
-            ))}
+            {CATEGORY_KEYS.map((cat) => {
+              const label = t(`cat.${cat.key}` as TranslationKey)
+              const catPrompt = t(`cat.${cat.key}.prompt` as TranslationKey)
+              return (
+                <button
+                  key={cat.key}
+                  onClick={() => {
+                    setPrompt(catPrompt)
+                    handleStart(catPrompt)
+                  }}
+                  disabled={isCreating}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-card hover:bg-accent transition-colors text-sm"
+                >
+                  <span>{cat.emoji}</span>
+                  <span>{label}</span>
+                </button>
+              )
+            })}
           </div>
         </div>
 
         {/* Agent Team Section */}
         <div className="mt-16">
-          <h2 className="text-2xl font-bold text-center mb-8">Your AI Team</h2>
+          <h2 className="text-2xl font-bold text-center mb-8">{t('home.yourAiTeam')}</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {agentList.slice(0, 4).map((agent) => (
               <div
@@ -156,10 +182,10 @@ export default function HomePage() {
                 </div>
                 <div className="font-semibold text-sm">{agent.displayName}</div>
                 <div className="text-xs" style={{ color: agent.color }}>
-                  {agent.role}
+                  {t(`agent.role.${agent.name}` as TranslationKey)}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                  {agent.description}
+                  {t(`agent.desc.${agent.name}` as TranslationKey)}
                 </p>
               </div>
             ))}

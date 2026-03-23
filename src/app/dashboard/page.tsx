@@ -5,11 +5,13 @@ import { useRouter } from 'next/navigation'
 import { localDB, type LocalProject } from '@/lib/local-storage'
 import { Button } from '@/components/ui/button'
 import { Sparkles, Plus, Trash2, FolderOpen } from 'lucide-react'
+import { useTranslation } from '@/hooks/useTranslation'
 import Link from 'next/link'
 
 export default function DashboardPage() {
   const [projects, setProjects] = useState<LocalProject[]>([])
   const router = useRouter()
+  const { t, locale, setLocale } = useTranslation()
 
   useEffect(() => {
     setProjects(localDB.getProjects())
@@ -28,26 +30,46 @@ export default function DashboardPage() {
           <span className="text-xl font-bold tracking-tight">Atoms</span>
           <span className="text-sm text-muted-foreground">Demo</span>
         </Link>
-        <Link href="/">
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            New Project
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center bg-muted rounded-lg p-0.5">
+            <Button
+              variant={locale === 'en' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setLocale('en')}
+              className="h-7 text-xs"
+            >
+              EN
+            </Button>
+            <Button
+              variant={locale === 'zh' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setLocale('zh')}
+              className="h-7 text-xs"
+            >
+              中文
+            </Button>
+          </div>
+          <Link href="/">
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              {t('dash.newProject')}
+            </Button>
+          </Link>
+        </div>
       </nav>
 
       <main className="max-w-4xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-6">Your Projects</h1>
+        <h1 className="text-2xl font-bold mb-6">{t('dash.yourProjects')}</h1>
 
         {projects.length === 0 ? (
           <div className="text-center py-16 border border-dashed border-border rounded-2xl">
             <FolderOpen className="w-12 h-12 mx-auto mb-3 text-muted-foreground/40" />
-            <p className="text-lg font-medium text-muted-foreground mb-1">No projects yet</p>
-            <p className="text-sm text-muted-foreground mb-4">Create your first AI-powered app</p>
+            <p className="text-lg font-medium text-muted-foreground mb-1">{t('dash.noProjects')}</p>
+            <p className="text-sm text-muted-foreground mb-4">{t('dash.createFirst')}</p>
             <Link href="/">
               <Button>
                 <Plus className="w-4 h-4 mr-2" />
-                Start Building
+                {t('dash.startBuilding')}
               </Button>
             </Link>
           </div>
@@ -87,7 +109,7 @@ export default function DashboardPage() {
                     onClick={() => router.push(`/workspace/${project.id}`)}
                     className="h-7 text-xs"
                   >
-                    Open
+                    {t('dash.open')}
                   </Button>
                 </div>
               </div>

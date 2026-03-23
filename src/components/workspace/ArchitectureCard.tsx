@@ -1,12 +1,14 @@
 'use client'
 
 import { Network } from 'lucide-react'
+import { useTranslation } from '@/hooks/useTranslation'
 
 interface ArchitectureCardProps {
   content: string
 }
 
 export function ArchitectureCard({ content }: ArchitectureCardProps) {
+  const { t } = useTranslation()
   const lines = content.split('\n').filter((l) => l.trim().length > 0)
 
   return (
@@ -14,7 +16,7 @@ export function ArchitectureCard({ content }: ArchitectureCardProps) {
       <div className="flex items-center gap-2 mb-3">
         <Network className="w-4 h-4 text-rose-600" />
         <span className="text-sm font-semibold text-rose-700 dark:text-rose-400">
-          Architecture
+          {t('card.architecture')}
         </span>
       </div>
       <pre className="text-sm font-mono text-foreground/80 overflow-x-auto">

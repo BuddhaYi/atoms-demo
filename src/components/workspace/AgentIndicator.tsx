@@ -1,7 +1,9 @@
 'use client'
 
 import { AGENTS } from '@/lib/agents/registry'
+import { useTranslation } from '@/hooks/useTranslation'
 import type { AgentName } from '@/types'
+import type { TranslationKey } from '@/i18n'
 
 interface AgentIndicatorProps {
   agentName: AgentName
@@ -9,6 +11,9 @@ interface AgentIndicatorProps {
 
 export function AgentIndicator({ agentName }: AgentIndicatorProps) {
   const agent = AGENTS[agentName]
+  const { t } = useTranslation()
+
+  const actionKey = `agent.action.${agentName}` as TranslationKey
 
   return (
     <div className="flex items-center gap-3 px-4 py-3 mb-2">
@@ -26,7 +31,7 @@ export function AgentIndicator({ agentName }: AgentIndicatorProps) {
       </div>
       <div className="flex items-center gap-2">
         <span className="text-sm font-medium">{agent.displayName}</span>
-        <span className="text-xs text-muted-foreground">is {getAction(agentName)}...</span>
+        <span className="text-xs text-muted-foreground">{t('agent.is')} {t(actionKey)}...</span>
         <div className="flex gap-0.5">
           <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: '0ms' }} />
           <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -37,15 +42,3 @@ export function AgentIndicator({ agentName }: AgentIndicatorProps) {
   )
 }
 
-function getAction(agent: AgentName): string {
-  const actions: Record<AgentName, string> = {
-    mike: 'coordinating',
-    emma: 'analyzing requirements',
-    bob: 'designing architecture',
-    alex: 'writing code',
-    david: 'analyzing data',
-    iris: 'researching',
-    sarah: 'optimizing SEO',
-  }
-  return actions[agent]
-}

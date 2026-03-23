@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Sparkles } from 'lucide-react'
+import { useTranslation } from '@/hooks/useTranslation'
 import Link from 'next/link'
 
 export default function RegisterPage() {
@@ -17,6 +18,7 @@ export default function RegisterPage() {
   const [success, setSuccess] = useState(false)
   const { signUp, supabaseConfigured } = useAuth()
   const router = useRouter()
+  const { t } = useTranslation()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -38,12 +40,12 @@ export default function RegisterPage() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/30">
         <div className="w-full max-w-sm p-6 text-center">
           <Sparkles className="w-10 h-10 text-primary mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-2">Auth Not Configured</h1>
+          <h1 className="text-2xl font-bold mb-2">{t('login.authNotConfigured')}</h1>
           <p className="text-muted-foreground mb-4">
-            Supabase credentials are not set. The app works without authentication.
+            {t('login.supabaseNotSet')}
           </p>
           <Link href="/">
-            <Button className="w-full">Continue Without Auth</Button>
+            <Button className="w-full">{t('login.continueWithoutAuth')}</Button>
           </Link>
         </div>
       </div>
@@ -55,12 +57,12 @@ export default function RegisterPage() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/30">
         <div className="w-full max-w-sm bg-card border border-border rounded-2xl shadow-lg p-6 text-center">
           <Sparkles className="w-10 h-10 text-primary mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-2">Check your email</h1>
+          <h1 className="text-2xl font-bold mb-2">{t('reg.checkEmail')}</h1>
           <p className="text-muted-foreground mb-4">
-            We sent a confirmation link to <strong>{email}</strong>
+            {t('reg.sentConfirmation')} <strong>{email}</strong>
           </p>
           <Link href="/login">
-            <Button variant="outline" className="w-full">Back to Login</Button>
+            <Button variant="outline" className="w-full">{t('reg.backToLogin')}</Button>
           </Link>
         </div>
       </div>
@@ -73,8 +75,8 @@ export default function RegisterPage() {
         <div className="bg-card border border-border rounded-2xl shadow-lg p-6">
           <div className="text-center mb-6">
             <Sparkles className="w-10 h-10 text-primary mx-auto mb-2" />
-            <h1 className="text-2xl font-bold">Create account</h1>
-            <p className="text-sm text-muted-foreground">Get started with Atoms Demo</p>
+            <h1 className="text-2xl font-bold">{t('reg.createAccount')}</h1>
+            <p className="text-sm text-muted-foreground">{t('reg.getStarted')}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -86,7 +88,7 @@ export default function RegisterPage() {
             <div>
               <Input
                 type="text"
-                placeholder="Display name"
+                placeholder={t('reg.displayName')}
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
               />
@@ -94,7 +96,7 @@ export default function RegisterPage() {
             <div>
               <Input
                 type="email"
-                placeholder="Email"
+                placeholder={t('login.email')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -103,7 +105,7 @@ export default function RegisterPage() {
             <div>
               <Input
                 type="password"
-                placeholder="Password (min 6 characters)"
+                placeholder={t('reg.passwordMin')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -111,14 +113,14 @@ export default function RegisterPage() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Creating account...' : 'Create Account'}
+              {isLoading ? t('reg.creatingAccount') : t('reg.createAccountBtn')}
             </Button>
           </form>
 
           <p className="text-center text-sm text-muted-foreground mt-4">
-            Already have an account?{' '}
+            {t('reg.haveAccount')}{' '}
             <Link href="/login" className="text-primary hover:underline">
-              Sign in
+              {t('reg.signIn')}
             </Link>
           </p>
         </div>

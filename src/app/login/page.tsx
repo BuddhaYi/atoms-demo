@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Sparkles } from 'lucide-react'
+import { useTranslation } from '@/hooks/useTranslation'
 import Link from 'next/link'
 
 export default function LoginPage() {
@@ -15,6 +16,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const { signIn, supabaseConfigured } = useAuth()
   const router = useRouter()
+  const { t } = useTranslation()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -36,12 +38,12 @@ export default function LoginPage() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/30">
         <div className="w-full max-w-sm p-6 text-center">
           <Sparkles className="w-10 h-10 text-primary mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-2">Auth Not Configured</h1>
+          <h1 className="text-2xl font-bold mb-2">{t('login.authNotConfigured')}</h1>
           <p className="text-muted-foreground mb-4">
-            Supabase credentials are not set. The app works without authentication.
+            {t('login.supabaseNotSet')}
           </p>
           <Link href="/">
-            <Button className="w-full">Continue Without Auth</Button>
+            <Button className="w-full">{t('login.continueWithoutAuth')}</Button>
           </Link>
         </div>
       </div>
@@ -54,8 +56,8 @@ export default function LoginPage() {
         <div className="bg-card border border-border rounded-2xl shadow-lg p-6">
           <div className="text-center mb-6">
             <Sparkles className="w-10 h-10 text-primary mx-auto mb-2" />
-            <h1 className="text-2xl font-bold">Welcome back</h1>
-            <p className="text-sm text-muted-foreground">Sign in to Atoms Demo</p>
+            <h1 className="text-2xl font-bold">{t('login.welcomeBack')}</h1>
+            <p className="text-sm text-muted-foreground">{t('login.signInTo')}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -67,7 +69,7 @@ export default function LoginPage() {
             <div>
               <Input
                 type="email"
-                placeholder="Email"
+                placeholder={t('login.email')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -76,7 +78,7 @@ export default function LoginPage() {
             <div>
               <Input
                 type="password"
-                placeholder="Password"
+                placeholder={t('login.password')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -84,14 +86,14 @@ export default function LoginPage() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Signing in...' : 'Sign In'}
+              {isLoading ? t('login.signingIn') : t('login.signIn')}
             </Button>
           </form>
 
           <p className="text-center text-sm text-muted-foreground mt-4">
-            Don&apos;t have an account?{' '}
+            {t('login.noAccount')}{' '}
             <Link href="/register" className="text-primary hover:underline">
-              Sign up
+              {t('login.signUp')}
             </Link>
           </p>
         </div>

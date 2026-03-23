@@ -4,6 +4,7 @@ import { Monitor, Smartphone, Terminal, Bug } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useWorkspaceStore } from '@/store/workspace-store'
 import { useChat } from '@/hooks/useChat'
+import { useTranslation } from '@/hooks/useTranslation'
 import { SandpackPreview } from './SandpackPreview'
 import { VersionHistory } from './VersionHistory'
 
@@ -17,6 +18,7 @@ export function PreviewPanel() {
     isGenerating,
   } = useWorkspaceStore()
   const { sendMessage } = useChat()
+  const { t } = useTranslation()
 
   const hasCode = Object.keys(currentCode).length > 0
 
@@ -32,7 +34,7 @@ export function PreviewPanel() {
             className="h-8"
           >
             <Monitor className="w-4 h-4 mr-1" />
-            Desktop
+            {t('prev.desktop')}
           </Button>
           <Button
             variant={previewDevice === 'mobile' ? 'secondary' : 'ghost'}
@@ -41,7 +43,7 @@ export function PreviewPanel() {
             className="h-8"
           >
             <Smartphone className="w-4 h-4 mr-1" />
-            Mobile
+            {t('prev.mobile')}
           </Button>
         </div>
         <div className="flex items-center gap-1">
@@ -52,7 +54,7 @@ export function PreviewPanel() {
             className="h-8"
           >
             <Terminal className="w-4 h-4 mr-1" />
-            Console
+            {t('prev.console')}
           </Button>
           {hasCode && (
             <Button
@@ -61,11 +63,11 @@ export function PreviewPanel() {
               className="h-8 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
               disabled={isGenerating}
               onClick={() => {
-                sendMessage('', { error: 'Please review and fix any issues in the code' })
+                sendMessage('', { error: t('prev.fixBugPrompt') })
               }}
             >
               <Bug className="w-4 h-4 mr-1" />
-              Fix Bug
+              {t('prev.fixBug')}
             </Button>
           )}
         </div>
@@ -83,8 +85,8 @@ export function PreviewPanel() {
           <div className="flex items-center justify-center h-full text-muted-foreground">
             <div className="text-center">
               <Monitor className="w-12 h-12 mx-auto mb-3 opacity-30" />
-              <p className="text-lg font-medium mb-1">Preview</p>
-              <p className="text-sm">Your app will appear here once generated</p>
+              <p className="text-lg font-medium mb-1">{t('prev.title')}</p>
+              <p className="text-sm">{t('prev.emptyMessage')}</p>
             </div>
           </div>
         )}

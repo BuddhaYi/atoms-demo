@@ -2,6 +2,8 @@
 
 import type { ChatMessage as ChatMessageType } from '@/types'
 import { AGENTS } from '@/lib/agents/registry'
+import { useTranslation } from '@/hooks/useTranslation'
+import type { TranslationKey } from '@/i18n'
 import { FeatureListCard } from './FeatureListCard'
 import { ArchitectureCard } from './ArchitectureCard'
 
@@ -10,6 +12,8 @@ interface ChatMessageProps {
 }
 
 export function ChatMessage({ message }: ChatMessageProps) {
+  const { t } = useTranslation()
+
   if (message.role === 'system') {
     return (
       <div className="flex justify-center my-2">
@@ -51,7 +55,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
               className="text-xs px-2 py-0.5 rounded-full"
               style={{ backgroundColor: agent.color + '15', color: agent.color }}
             >
-              {agent.role}
+              {t(`agent.role.${agent.name}` as TranslationKey)}
             </span>
           </div>
         )}

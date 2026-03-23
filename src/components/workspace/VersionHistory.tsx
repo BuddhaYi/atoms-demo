@@ -3,9 +3,11 @@
 import { Clock, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useWorkspaceStore } from '@/store/workspace-store'
+import { useTranslation } from '@/hooks/useTranslation'
 
 export function VersionHistory() {
   const { versions, currentVersionNumber, rollbackToVersion } = useWorkspaceStore()
+  const { t } = useTranslation()
 
   if (versions.length === 0) return null
 
@@ -13,7 +15,7 @@ export function VersionHistory() {
     <div className="border-t border-border bg-background">
       <div className="px-3 py-2 flex items-center gap-2 text-xs text-muted-foreground">
         <Clock className="w-3 h-3" />
-        <span>Versions</span>
+        <span>{t('ver.versions')}</span>
       </div>
       <div className="px-3 pb-2 flex gap-1.5 overflow-x-auto">
         {versions.map((v) => (

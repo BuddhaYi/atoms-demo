@@ -1,10 +1,11 @@
 'use client'
 
-import { ArrowLeft, Download, Moon, Sun, Zap, Users } from 'lucide-react'
+import { ArrowLeft, Download, Moon, Sun, Zap, Users, Globe } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useWorkspaceStore } from '@/store/workspace-store'
 import { useTheme } from 'next-themes'
+import { useTranslation } from '@/hooks/useTranslation'
 import Link from 'next/link'
 
 interface TopBarProps {
@@ -22,6 +23,7 @@ export function TopBar({ onExport }: TopBarProps) {
     tokensUsed,
   } = useWorkspaceStore()
   const { theme, setTheme } = useTheme()
+  const { t, locale, setLocale } = useTranslation()
 
   return (
     <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-background">
@@ -56,7 +58,7 @@ export function TopBar({ onExport }: TopBarProps) {
             className="h-7 text-xs"
           >
             <Zap className="w-3 h-3 mr-1" />
-            Engineer
+            {t('top.engineer')}
           </Button>
           <Button
             variant={mode === 'team' ? 'secondary' : 'ghost'}
@@ -65,7 +67,7 @@ export function TopBar({ onExport }: TopBarProps) {
             className="h-7 text-xs"
           >
             <Users className="w-3 h-3 mr-1" />
-            Team
+            {t('top.team')}
           </Button>
         </div>
 
@@ -99,9 +101,29 @@ export function TopBar({ onExport }: TopBarProps) {
 
         {tokensUsed > 0 && (
           <Badge variant="outline" className="text-xs text-muted-foreground">
-            {tokensUsed.toLocaleString()} tokens
+            {tokensUsed.toLocaleString()} {t('top.tokens')}
           </Badge>
         )}
+
+        {/* Language toggle */}
+        <div className="flex items-center bg-muted rounded-lg p-0.5">
+          <Button
+            variant={locale === 'en' ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={() => setLocale('en')}
+            className="h-7 text-xs"
+          >
+            EN
+          </Button>
+          <Button
+            variant={locale === 'zh' ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={() => setLocale('zh')}
+            className="h-7 text-xs"
+          >
+            中文
+          </Button>
+        </div>
 
         {/* Dark mode toggle */}
         <Button
@@ -118,7 +140,7 @@ export function TopBar({ onExport }: TopBarProps) {
         {onExport && (
           <Button variant="outline" size="sm" onClick={onExport} className="h-8">
             <Download className="w-4 h-4 mr-1" />
-            Export
+            {t('top.export')}
           </Button>
         )}
       </div>

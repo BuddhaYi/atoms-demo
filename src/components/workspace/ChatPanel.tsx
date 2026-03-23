@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { useWorkspaceStore } from '@/store/workspace-store'
 import { useChat } from '@/hooks/useChat'
+import { useTranslation } from '@/hooks/useTranslation'
 import { ChatMessage } from './ChatMessage'
 import { ChatInput } from './ChatInput'
 import { AgentIndicator } from './AgentIndicator'
@@ -10,6 +11,7 @@ import { AgentIndicator } from './AgentIndicator'
 export function ChatPanel() {
   const { messages, activeAgent, isGenerating } = useWorkspaceStore()
   const { sendMessage, stopGeneration } = useChat()
+  const { t } = useTranslation()
   const scrollRef = useRef<HTMLDivElement>(null)
 
   // Auto-scroll to bottom on new messages
@@ -26,8 +28,8 @@ export function ChatPanel() {
         {messages.length === 0 && (
           <div className="flex items-center justify-center h-full text-muted-foreground">
             <div className="text-center">
-              <p className="text-lg font-medium mb-1">Start building</p>
-              <p className="text-sm">Describe what you want to create</p>
+              <p className="text-lg font-medium mb-1">{t('chat.startBuilding')}</p>
+              <p className="text-sm">{t('chat.describeCreate')}</p>
             </div>
           </div>
         )}
@@ -44,8 +46,8 @@ export function ChatPanel() {
         isGenerating={isGenerating}
         placeholder={
           messages.length === 0
-            ? 'Describe what you want to build...'
-            : 'Ask for changes or additions...'
+            ? t('chat.placeholderFirst')
+            : t('chat.placeholderFollowup')
         }
       />
     </div>
