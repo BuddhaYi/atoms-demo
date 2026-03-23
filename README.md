@@ -11,6 +11,8 @@ Users describe what they want in natural language. A team of AI agents collabora
 - Online: https://lab.agentosbase.com
 - GitHub: https://github.com/BuddhaYi/atoms-demo
 
+![Atoms Demo - 多智能体协作生成 3A 射击游戏](docs/demo-screenshot.jpg)
+
 ---
 
 ## 实现思路与关键取舍
