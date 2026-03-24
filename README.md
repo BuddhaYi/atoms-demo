@@ -28,8 +28,12 @@ Users describe what they want in natural language. A team of AI agents collabora
 
 <table>
   <tr>
-    <td width="60%"><strong>桌面端预览</strong><br><img src="docs/preview-desktop.png" alt="桌面端预览 - SaaSMetrics Pro"/></td>
-    <td width="40%"><strong>移动端预览</strong><br><img src="docs/preview-mobile.png" alt="移动端预览"/></td>
+    <td width="50%"><strong>习惯打卡器（亮色模式）</strong><br><img src="docs/preview-counter-light.png" alt="习惯打卡器 - 亮色模式"/></td>
+    <td width="50%"><strong>习惯打卡器（暗色模式）</strong><br><img src="docs/preview-counter-dark.png" alt="习惯打卡器 - 暗色模式"/></td>
+  </tr>
+  <tr>
+    <td width="60%"><strong>SaaS 数据看板（桌面端）</strong><br><img src="docs/preview-desktop.png" alt="桌面端预览 - SaaSMetrics Pro"/></td>
+    <td width="40%"><strong>SaaS 数据看板（移动端）</strong><br><img src="docs/preview-mobile.png" alt="移动端预览"/></td>
   </tr>
 </table>
 
