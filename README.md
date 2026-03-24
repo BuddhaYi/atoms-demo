@@ -24,6 +24,8 @@ Users describe what they want in natural language. A team of AI agents collabora
 
 ### 生成结果预览
 
+![生成结果 - 3A 射击游戏](docs/preview-game.jpg)
+
 <table>
   <tr>
     <td width="60%"><strong>桌面端预览</strong><br><img src="docs/preview-desktop.png" alt="桌面端预览 - SaaSMetrics Pro"/></td>
