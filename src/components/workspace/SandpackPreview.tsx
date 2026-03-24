@@ -1,11 +1,14 @@
 'use client'
 
+import { useCallback } from 'react'
 import {
   SandpackProvider,
   SandpackPreview as SandpackPreviewComponent,
   SandpackConsole,
 } from '@codesandbox/sandpack-react'
 import type { PreviewDevice } from '@/types'
+import { useWorkspaceStore } from '@/store/workspace-store'
+import { SandpackErrorListener } from './SandpackErrorListener'
 
 /* Force Sandpack internals to fill parent via absolute positioning */
 const SANDPACK_STYLES = `
@@ -80,6 +83,10 @@ export function SandpackPreview({
 }`
   }
 
+  const handleErrors = useCallback((errors: string[]) => {
+    useWorkspaceStore.getState().setQaErrors(errors)
+  }, [])
+
   const providerProps = {
     template: 'react' as const,
     files: sandpackFiles,
@@ -101,6 +108,7 @@ export function SandpackPreview({
       <style>{SANDPACK_STYLES}</style>
 
       <SandpackProvider {...providerProps}>
+        <SandpackErrorListener onError={handleErrors} />
         {/* Preview - fills available space */}
         <div
           className="flex-1 min-h-0 relative"

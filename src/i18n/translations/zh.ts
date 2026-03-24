@@ -91,6 +91,7 @@ export const zh = {
   'agent.action.iris': '深度调研',
   'agent.action.sarah': '优化 SEO',
   'agent.action.reviewer': '审查代码',
+  'agent.action.qa': '测试代码',
 
   // Agent roles
   'agent.role.mike': '团队负责人',
@@ -101,6 +102,7 @@ export const zh = {
   'agent.role.iris': '深度研究员',
   'agent.role.sarah': 'SEO 专家',
   'agent.role.reviewer': '代码审查员',
+  'agent.role.qa': '测试工程师',
 
   // Agent descriptions
   'agent.desc.mike': '协调任务并分配给合适的智能体',
@@ -111,6 +113,7 @@ export const zh = {
   'agent.desc.iris': '收集信息和研究洞察',
   'agent.desc.sarah': '优化搜索引擎和内容策略',
   'agent.desc.reviewer': '审查代码质量、性能和最佳实践',
+  'agent.desc.qa': '测试代码并自动修复运行时错误',
 
   // Cards
   'card.requirements': '需求分析',

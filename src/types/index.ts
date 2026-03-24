@@ -1,5 +1,5 @@
 // Agent types
-export type AgentName = 'mike' | 'emma' | 'bob' | 'alex' | 'david' | 'iris' | 'sarah' | 'reviewer'
+export type AgentName = 'mike' | 'emma' | 'bob' | 'alex' | 'david' | 'iris' | 'sarah' | 'reviewer' | 'qa'
 
 export interface Agent {
   name: AgentName

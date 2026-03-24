@@ -91,6 +91,7 @@ export const en = {
   'agent.action.iris': 'researching',
   'agent.action.sarah': 'optimizing SEO',
   'agent.action.reviewer': 'reviewing code',
+  'agent.action.qa': 'testing code',
 
   // Agent roles
   'agent.role.mike': 'Team Leader',
@@ -101,6 +102,7 @@ export const en = {
   'agent.role.iris': 'Deep Researcher',
   'agent.role.sarah': 'SEO Specialist',
   'agent.role.reviewer': 'Code Reviewer',
+  'agent.role.qa': 'QA Engineer',
 
   // Agent descriptions
   'agent.desc.mike': 'Coordinates tasks and delegates to the right agent',
@@ -111,6 +113,7 @@ export const en = {
   'agent.desc.iris': 'Gathers information and research insights',
   'agent.desc.sarah': 'Optimizes for search engines and content strategy',
   'agent.desc.reviewer': 'Reviews code quality, performance, and best practices',
+  'agent.desc.qa': 'Tests code and automatically fixes runtime bugs',
 
   // Cards
   'card.requirements': 'Requirements',

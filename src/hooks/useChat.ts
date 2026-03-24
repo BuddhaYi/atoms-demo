@@ -52,6 +52,11 @@ export function useChat() {
       const phase = options?.phase
       const approvedFeatures = options?.approvedFeatures
 
+      // Reset QA state on new user-initiated messages (not fix attempts)
+      if (!fixBug) {
+        useWorkspaceStore.getState().resetQa()
+      }
+
       // Add user message (skip for fixBug, implement phase, and plan phase after optimize)
       if (!fixBug && phase !== 'implement' && phase !== 'plan') {
         const userMsg: ChatMessage = {

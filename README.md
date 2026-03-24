@@ -63,6 +63,8 @@ Users describe what they want in natural language. A team of AI agents collabora
 
    这让用户对生成内容有控制权，避免浪费 token 生成不需要的功能。
 
+   代码生成后，**QA 智能体**自动监听 Sandpack 运行时错误（console.error + 编译错误），检测到问题后自动触发修复，最多尝试 3 次。无错误时静默通过，用户无感知。
+
 3. **Sandpack 浏览器内运行** — 使用 CodeSandbox 的 Sandpack 作为预览引擎，生成的 React 代码在浏览器内直接运行，无需后端编译。通过 Tailwind CDN + 预设依赖（recharts、lucide-react、date-fns）覆盖大部分常见场景。
 
 4. **自建认证而非第三方** — 使用 bcryptjs + JWT + httpOnly Cookie 实现完整认证流程，而非依赖 Supabase Auth 或 NextAuth。这减少了外部依赖，部署更简单。
@@ -85,7 +87,7 @@ Users describe what they want in natural language. A team of AI agents collabora
 
 ### 核心功能
 
-- **多智能体团队协作** — Mike（提示词优化）、Emma（需求分析）、Bob（架构设计）、Alex（代码实现）4个智能体分工协作
+- **多智能体团队协作** — Mike（提示词优化）、Emma（需求分析）、Bob（架构设计）、Alex（代码实现）、QA（自动测试修复）5个智能体分工协作
 - **提示词优化** — Mike 分析用户输入，提供 3 个不同方向的优化方案供选择
 - **用户审批流程** — Emma 输出需求列表后暂停，用户通过 checkbox 勾选要实现的功能，点击"批准"后继续
 - **实时代码预览** — 生成的 React 应用在 Sandpack 中即时运行，支持完整交互
@@ -99,6 +101,7 @@ Users describe what they want in natural language. A team of AI agents collabora
 - **文件管理视图** — 文件列表，显示文件类型、大小、行数，支持复制和批量下载
 - **版本历史与回滚** — 每次生成创建版本快照，点击回滚
 - **Bug 修复** — 一键将当前代码发送给 AI 修复
+- **QA 自动测试** — 代码生成后自动检测 Sandpack 运行时错误，触发 AI 自动修复（最多 3 次）
 - **工程师/团队模式** — 单人模式（Alex 直接写代码）或团队协作模式
 - **桌面端/移动端预览** — 切换桌面全宽和 iPhone 框架预览
 - **控制台** — 查看 Sandpack 运行时的 console 输出
@@ -136,7 +139,10 @@ Users describe what they want in natural language. A team of AI agents collabora
 │  │ 🏗️ Bob: 架构    │  │  │                                  │   │
 │  ├────────────────┤  │  ├──────────────────────────────────┤   │
 │  │ ⚡ Alex: 代码   │  │  │  Console │ Review │ Fix Bug      │   │
-│  └────────────────┘  │  ├──────────────────────────────────┤   │
+│  ├────────────────┤  │  ├──────────────────────────────────┤   │
+│  │ 🧪 QA: 自动测试 │  │  │  (QA auto-detects runtime errors │   │
+│  └────────────────┘  │  │   and triggers auto-fix ×3)      │   │
+│                      │  ├──────────────────────────────────┤   │
 │  ┌────────────────┐  │  │  Version History (v1 v2 v3...)   │   │
 │  │  Chat Input     │  │  └──────────────────────────────────┘   │
 │  └────────────────┘  │                                         │
@@ -192,6 +198,8 @@ Emma: :::feature_list → 暂停
 Phase 2: POST /api/chat { phase: 'implement', approvedFeatures }
     ↓
 Bob: :::architecture → Alex: :::files → 预览更新
+    ↓
+QA: 自动检测 Sandpack 运行时错误 → 有错误则触发 Alex 自动修复（最多 3 次）
 ```
 
 ---
@@ -286,6 +294,7 @@ src/
 │   ├── ArchitectureCard.tsx            # 架构树形图卡片
 │   ├── PreviewPanel.tsx                # 预览面板 + 工具栏（4个视图）
 │   ├── SandpackPreview.tsx             # Sandpack 预览 + 控制台
+│   ├── SandpackErrorListener.tsx      # 运行时错误监听（QA 用）
 │   ├── CodeEditorPanel.tsx             # 代码编辑器视图
 │   ├── FilesPanel.tsx                  # 文件列表视图
 │   ├── ReviewPanel.tsx                 # AI 审查报告面板
@@ -303,6 +312,7 @@ src/
 │       └── stream-parser.ts           # [AGENT] + :::block::: 流式解析器
 ├── hooks/
 │   ├── useChat.ts                      # SSE 消费 + 两阶段流程 + 审批
+│   ├── useQA.ts                        # QA 自动测试 + 错误修复编排
 │   ├── useAuth.ts                      # 认证状态管理
 │   └── useTranslation.ts              # 国际化 Hook
 ├── store/
@@ -341,6 +351,7 @@ Docker files:
 - [x] 文件管理视图（大小/行数/复制/下载）
 - [x] 版本历史 + 回滚
 - [x] Bug 修复功能
+- [x] QA 自动测试（运行时错误检测 + AI 自动修复，最多 3 次）
 - [x] 控制台（Sandpack console 输出）
 - [x] 代码导出（zip 下载）
 - [x] 用户注册/登录/登出（自建 JWT 认证）
@@ -377,9 +388,7 @@ Docker files:
 
 ### P1（3-5 天）
 - **Race Mode** — 同时调用两个模型生成，用户选择更好的结果
-- **真实 Console 错误捕获** — Sandpack iframe 的 console.error 自动传给 Fix Bug
 - **Token 用量追踪** — 按用户/项目统计 token 消耗，设置限额
-- **Prompt 增强** — Iris 智能体先研究用户需求，优化 prompt 后再传给团队
 
 ### P2（1-2 周）
 - **协作编辑** — 支持在编辑器视图中直接修改代码（非只读）

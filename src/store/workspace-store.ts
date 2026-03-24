@@ -35,6 +35,11 @@ interface WorkspaceState {
   awaitingApproval: boolean
   lastUserPrompt: string
 
+  // QA
+  qaErrors: string[]
+  qaAttempts: number
+  qaEnabled: boolean
+
   // Settings
   mode: WorkspaceMode
   model: ModelProvider
@@ -64,6 +69,10 @@ interface WorkspaceState {
   setAwaitingApproval: (v: boolean) => void
   setLastUserPrompt: (prompt: string) => void
   toggleFeatureApproval: (index: number) => void
+  setQaErrors: (errors: string[]) => void
+  incrementQaAttempts: () => void
+  resetQa: () => void
+  setQaEnabled: (v: boolean) => void
   reset: () => void
 }
 
@@ -81,6 +90,9 @@ const initialState = {
   pendingFeatures: null as Array<{ text: string; approved: boolean }> | null,
   awaitingApproval: false,
   lastUserPrompt: '',
+  qaErrors: [] as string[],
+  qaAttempts: 0,
+  qaEnabled: true,
   mode: 'team' as WorkspaceMode,
   model: 'gemini' as ModelProvider,
   previewDevice: 'desktop' as PreviewDevice,
@@ -158,5 +170,10 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         ),
       }
     }),
+  setQaErrors: (errors) => set({ qaErrors: errors }),
+  incrementQaAttempts: () =>
+    set((state) => ({ qaAttempts: state.qaAttempts + 1 })),
+  resetQa: () => set({ qaErrors: [], qaAttempts: 0 }),
+  setQaEnabled: (v) => set({ qaEnabled: v }),
   reset: () => set(initialState),
 }))

@@ -3,6 +3,7 @@
 import { useEffect, useCallback, useState } from 'react'
 import { useWorkspaceStore } from '@/store/workspace-store'
 import { useChat } from '@/hooks/useChat'
+import { useQA } from '@/hooks/useQA'
 import { ChatPanel } from '@/components/workspace/ChatPanel'
 import { PreviewPanel } from '@/components/workspace/PreviewPanel'
 import { TopBar } from '@/components/workspace/TopBar'
@@ -14,6 +15,7 @@ export default function WorkspacePage() {
   const projectId = params.projectId as string
   const { setProjectId, setProjectTitle, reset, messages, versions } = useWorkspaceStore()
   const { sendMessage } = useChat()
+  useQA(sendMessage)
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null)
 
   // Step 1: Initialize workspace — load from API
