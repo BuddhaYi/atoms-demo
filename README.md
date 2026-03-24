@@ -8,8 +8,37 @@ Users describe what they want in natural language. A team of AI agents collabora
 
 ## Demo
 
+### 三阶段智能体协作流程
 
-![Atoms Demo - 多智能体协作生成 3A 射击游戏](docs/demo-screenshot.jpg)
+**Step 1 — Mike 提示词优化**：用户输入需求后，Mike 分析并提供 3 个优化方案供选择
+
+![Step 1 - Mike 提示词优化](docs/step1-mike-prompt-optimize.png)
+
+**Step 2 — Emma 需求分析 + 用户审批**：Emma 拆解功能需求，用户通过 checkbox 选择要实现的功能
+
+![Step 2 - Emma 需求分析与用户审批](docs/step2-emma-feature-approval.png)
+
+**Step 3 — Bob 架构设计 + Alex 编写代码**：Bob 输出组件架构树，Alex 基于架构编写完整代码
+
+![Step 3 - Bob 架构设计 + Alex 编写代码](docs/step3-bob-architecture.png)
+
+### 生成结果预览
+
+<table>
+  <tr>
+    <td width="60%"><strong>桌面端预览</strong><br><img src="docs/preview-desktop.png" alt="桌面端预览 - SaaSMetrics Pro"/></td>
+    <td width="40%"><strong>移动端预览</strong><br><img src="docs/preview-mobile.png" alt="移动端预览"/></td>
+  </tr>
+</table>
+
+### 代码查看
+
+<table>
+  <tr>
+    <td width="50%"><strong>代码编辑器</strong><br><img src="docs/view-editor.png" alt="代码编辑器视图"/></td>
+    <td width="50%"><strong>文件管理</strong><br><img src="docs/view-files.png" alt="文件管理视图"/></td>
+  </tr>
+</table>
 
 ---
 
@@ -21,8 +50,9 @@ Users describe what they want in natural language. A team of AI agents collabora
 
 1. **单次 LLM 调用模拟多智能体** — 不使用多次 API 调用，而是通过 System Prompt 让 LLM 在一次响应中扮演多个角色（Mike/Emma/Bob/Alex），用 `[AGENT]` 标记区分。流式解析器实时拆分为不同智能体的消息卡片。这比多次调用更一致、更快、更省 token。
 
-2. **两阶段生成 + 用户审批** — 参考 Atoms 的交互流程，将代码生成拆为两个阶段：
-   - **Phase 1（计划）**: Mike 协调 + Emma 输出需求列表 → 暂停等待用户审批
+2. **三阶段生成 + 用户审批** — 参考 Atoms 的交互流程，将代码生成拆为三个阶段：
+   - **Phase 0（优化）**: Mike 分析用户 prompt，提供 3 个优化方案供选择
+   - **Phase 1（计划）**: Emma 输出需求列表 → 暂停等待用户审批
    - **Phase 2（实现）**: 用户勾选/取消功能 → 点击"批准" → Bob 设计架构 + Alex 编写代码
 
    这让用户对生成内容有控制权，避免浪费 token 生成不需要的功能。
@@ -49,7 +79,8 @@ Users describe what they want in natural language. A team of AI agents collabora
 
 ### 核心功能
 
-- **多智能体团队协作** — Mike（协调）、Emma（需求分析）、Bob（架构设计）、Alex（代码实现）4个智能体分工协作
+- **多智能体团队协作** — Mike（提示词优化）、Emma（需求分析）、Bob（架构设计）、Alex（代码实现）4个智能体分工协作
+- **提示词优化** — Mike 分析用户输入，提供 3 个不同方向的优化方案供选择
 - **用户审批流程** — Emma 输出需求列表后暂停，用户通过 checkbox 勾选要实现的功能，点击"批准"后继续
 - **实时代码预览** — 生成的 React 应用在 Sandpack 中即时运行，支持完整交互
 - **对话式迭代修改** — 通过对话修改已有代码："把按钮改成红色"自动生成差量更新
@@ -135,14 +166,20 @@ App ├── Header ├── Dashboard └── Footer
 :::
 ```
 
-### 两阶段生成流程
+### 三阶段生成流程
 
 ```
 用户输入 prompt
     ↓
+Phase 0: POST /api/chat { phase: 'optimize' }
+    ↓
+Mike: :::prompt_options (3 个优化方案) → 暂停
+    ↓
+用户选择方案
+    ↓
 Phase 1: POST /api/chat { phase: 'plan' }
     ↓
-Mike: 协调 → Emma: :::feature_list → 暂停
+Emma: :::feature_list → 暂停
     ↓
 用户审阅功能列表 (checkbox + 批准按钮)
     ↓
@@ -288,7 +325,7 @@ Docker files:
 ### 已完成
 
 - [x] 多智能体团队协作（Mike/Emma/Bob/Alex）
-- [x] 两阶段生成 + 用户审批流程
+- [x] 三阶段生成（提示词优化 → 需求审批 → 架构+代码）
 - [x] Sandpack 实时预览（桌面端/移动端）
 - [x] 对话式迭代修改
 - [x] 3 种 AI 模型切换（Claude/Gemini/GPT-4o）
@@ -318,7 +355,7 @@ Docker files:
 - [ ] Race Mode（双模型对比生成）
 - [ ] @mention 智能体选择器
 - [ ] Token 用量追踪与限制
-- [ ] Prompt 增强（Iris 研究员智能体）
+- [x] Prompt 增强（Mike 提示词优化，提供 3 个方案供选择）
 - [ ] AI 自动命名项目
 - [ ] 页面过渡动画
 - [ ] E2E 测试

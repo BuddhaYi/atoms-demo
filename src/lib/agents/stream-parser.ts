@@ -17,6 +17,7 @@ interface ParserState {
   buffer: string
   inBlock: BlockType
   blockContent: string
+  inThinkBlock: boolean
 }
 
 export function createStreamParser() {
@@ -25,6 +26,7 @@ export function createStreamParser() {
     buffer: '',
     inBlock: null,
     blockContent: '',
+    inThinkBlock: false,
   }
 
   return {
@@ -32,9 +34,31 @@ export function createStreamParser() {
       const events: StreamEvent[] = []
       state.buffer += chunk
 
+      // Strip <think>...</think> blocks (some models emit reasoning tags)
+      if (state.inThinkBlock) {
+        const closeIdx = state.buffer.indexOf('</think>')
+        if (closeIdx === -1) {
+          state.buffer = ''
+          return events
+        }
+        state.buffer = state.buffer.slice(closeIdx + 8)
+        state.inThinkBlock = false
+      }
+      const thinkStart = state.buffer.indexOf('<think>')
+      if (thinkStart !== -1) {
+        const thinkEnd = state.buffer.indexOf('</think>', thinkStart)
+        if (thinkEnd !== -1) {
+          state.buffer = state.buffer.slice(0, thinkStart) + state.buffer.slice(thinkEnd + 8)
+        } else {
+          state.buffer = state.buffer.slice(0, thinkStart)
+          state.inThinkBlock = true
+          if (state.buffer.length === 0) return events
+        }
+      }
+
       while (state.buffer.length > 0) {
         if (state.inBlock === null) {
-          // Check for agent tag
+          // Check for agent tag at buffer start
           const agentMatch = state.buffer.match(AGENT_TAG_REGEX)
           if (agentMatch && state.buffer.indexOf(agentMatch[0]) === 0) {
             const agentName = agentMatch[1].toLowerCase() as AgentName
@@ -81,26 +105,29 @@ export function createStreamParser() {
             continue
           }
 
-          // Regular text - process lines first for agent tag detection
+          // Regular text - process lines
           const newlineIdx = state.buffer.indexOf('\n')
           if (newlineIdx >= 0) {
             const line = state.buffer.slice(0, newlineIdx + 1)
             state.buffer = state.buffer.slice(newlineIdx + 1)
 
             const trimmed = line.trim()
-            if (trimmed && state.currentAgent) {
-              // Check if this line starts with an agent tag
+            if (trimmed) {
+              // Always check for agent tags in lines (even without currentAgent)
               const lineAgentMatch = trimmed.match(AGENT_TAG_REGEX)
               if (lineAgentMatch && trimmed.indexOf(lineAgentMatch[0]) === 0) {
                 state.buffer = trimmed + '\n' + state.buffer
                 continue
               }
-              events.push({
-                type: 'agent_message',
-                agent: state.currentAgent,
-                content: trimmed,
-                content_type: 'text',
-              })
+              // Only emit text when we have an active agent
+              if (state.currentAgent) {
+                events.push({
+                  type: 'agent_message',
+                  agent: state.currentAgent,
+                  content: trimmed,
+                  content_type: 'text',
+                })
+              }
             }
           } else {
             // No newline yet — emit partial text for real-time streaming
@@ -216,13 +243,19 @@ export function createStreamParser() {
           }
         }
       }
+      // Close any open non-files block
+      if (state.inBlock && state.inBlock !== 'files') {
+        state.inBlock = null
+        state.blockContent = ''
+      }
 
-      // Emit any remaining buffer text
-      if (state.buffer.trim() && state.currentAgent) {
+      // Emit any remaining buffer text (skip standalone block markers)
+      const remaining = state.buffer.trim()
+      if (remaining && remaining !== ':::' && state.currentAgent) {
         events.push({
           type: 'agent_message',
           agent: state.currentAgent,
-          content: state.buffer.trim(),
+          content: remaining,
           content_type: 'text',
         })
       }
