@@ -183,6 +183,7 @@ export default function HomePage() {
                 {([
                   { key: 'claude' as const, label: 'Claude' },
                   { key: 'gemini' as const, label: 'Gemini' },
+                  { key: 'deepseek' as const, label: 'DeepSeek' },
                   { key: 'openai' as const, label: 'GPT-4o' },
                 ] as const).map(({ key, label }) => (
                   <Button

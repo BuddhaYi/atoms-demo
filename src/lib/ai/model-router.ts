@@ -23,6 +23,17 @@ export async function callModelWithTools(
     // Gemini proxy doesn't support function calling — use text-only mode
     return callGeminiTextOnly(systemPrompt, messages)
   }
+  if (model === 'deepseek') {
+    return callOpenAICompatibleWithTools(
+      {
+        url: 'https://api.deepseek.com/v1/chat/completions',
+        apiKey: process.env.DEEPSEEK_API_KEY || '',
+        model: 'deepseek-chat',
+      },
+      systemPrompt,
+      messages,
+    )
+  }
   return callOpenAICompatibleWithTools(
     {
       url: 'https://api.openai.com/v1/chat/completions',
@@ -209,6 +220,9 @@ export async function streamFromModel(
   if (model === 'gemini') {
     return streamFromGemini(systemPrompt, userMessage, history)
   }
+  if (model === 'deepseek') {
+    return streamFromDeepSeek(systemPrompt, userMessage, history)
+  }
   return streamFromOpenAI(systemPrompt, userMessage, history)
 }
 
@@ -285,6 +299,45 @@ async function streamFromOpenAI(
   if (!response.ok) {
     const text = await response.text()
     throw new Error(`OpenAI API error: ${response.status} ${text}`)
+  }
+
+  return createSSETextStream(response, (parsed) => {
+    const content = parsed.choices?.[0]?.delta?.content
+    return content || null
+  })
+}
+
+async function streamFromDeepSeek(
+  systemPrompt: string,
+  userMessage: string,
+  history: Array<{ role: 'user' | 'assistant'; content: string }>
+): Promise<ReadableStream<string>> {
+  const messages = [
+    { role: 'system' as const, content: systemPrompt },
+    ...history.map(h => ({
+      role: h.role as 'user' | 'assistant',
+      content: h.content,
+    })),
+    { role: 'user' as const, content: userMessage },
+  ]
+
+  const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: 'deepseek-chat',
+      max_tokens: 8192,
+      messages,
+      stream: true,
+    }),
+  })
+
+  if (!response.ok) {
+    const text = await response.text()
+    throw new Error(`DeepSeek API error: ${response.status} ${text}`)
   }
 
   return createSSETextStream(response, (parsed) => {

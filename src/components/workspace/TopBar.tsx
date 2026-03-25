@@ -116,6 +116,7 @@ export function TopBar({ onExport }: TopBarProps) {
           {([
             { key: 'claude' as const, label: 'Claude' },
             { key: 'gemini' as const, label: 'Gemini' },
+            { key: 'deepseek' as const, label: 'DeepSeek' },
             { key: 'openai' as const, label: 'GPT-4o' },
           ]).map(({ key, label }) => (
             <Button

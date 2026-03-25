@@ -69,7 +69,7 @@ export interface ChatMessageMetadata {
 
 // Workspace state
 export type WorkspaceMode = 'engineer' | 'team' | 'agent'
-export type ModelProvider = 'claude' | 'openai' | 'gemini'
+export type ModelProvider = 'claude' | 'openai' | 'gemini' | 'deepseek'
 export type PreviewDevice = 'desktop' | 'mobile'
 
 // Tool types for Agent mode
