@@ -4,12 +4,13 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { ArrowRight, Sparkles, FolderOpen, LogOut } from 'lucide-react'
+import { ArrowRight, Sparkles, FolderOpen, LogOut, Zap, Users, Bot } from 'lucide-react'
 import { AGENTS } from '@/lib/agents/registry'
 import { apiClient } from '@/lib/api-client'
 import { useAuth } from '@/hooks/useAuth'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { TranslationKey } from '@/i18n'
+import type { WorkspaceMode, ModelProvider } from '@/types'
 import Link from 'next/link'
 
 const CATEGORY_KEYS = [
@@ -27,6 +28,8 @@ const agentList = Object.values(AGENTS)
 export default function HomePage() {
   const [prompt, setPrompt] = useState('')
   const [isCreating, setIsCreating] = useState(false)
+  const [mode, setMode] = useState<WorkspaceMode>('team')
+  const [model, setModel] = useState<ModelProvider>('gemini')
   const router = useRouter()
   const { user, signOut } = useAuth()
   const { t, locale, setLocale } = useTranslation()
@@ -47,6 +50,8 @@ export default function HomePage() {
     })
 
     sessionStorage.setItem(`project_${projectId}_prompt`, finalPrompt.trim())
+    sessionStorage.setItem(`project_${projectId}_mode`, mode)
+    sessionStorage.setItem(`project_${projectId}_model`, model)
     router.push(`/workspace/${projectId}`)
   }
 
@@ -145,7 +150,58 @@ export default function HomePage() {
               }
             }}
           />
-          <div className="flex justify-end mt-2">
+          <div className="flex items-center justify-between mt-3">
+            <div className="flex items-center gap-2">
+              {/* Mode toggle */}
+              <div className="flex items-center bg-muted rounded-lg p-0.5">
+                {([
+                  { key: 'engineer' as const, icon: Zap, label: t('top.engineer') },
+                  { key: 'team' as const, icon: Users, label: t('top.team') },
+                  { key: 'agent' as const, icon: Bot, label: 'Agent' },
+                ] as const).map(({ key, icon: Icon, label }) => (
+                  <Button
+                    key={key}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setMode(key)}
+                    className={`h-7 text-xs ${
+                      mode === key
+                        ? key === 'agent'
+                          ? 'bg-violet-500/15 text-violet-700 dark:text-violet-400 hover:bg-violet-500/25'
+                          : 'bg-amber-500/15 text-amber-700 dark:text-amber-400 hover:bg-amber-500/25'
+                        : ''
+                    }`}
+                  >
+                    <Icon className="w-3 h-3 mr-1" />
+                    {label}
+                  </Button>
+                ))}
+              </div>
+
+              {/* Model toggle */}
+              <div className="flex items-center bg-muted rounded-lg p-0.5">
+                {([
+                  { key: 'claude' as const, label: 'Claude' },
+                  { key: 'gemini' as const, label: 'Gemini' },
+                  { key: 'openai' as const, label: 'GPT-4o' },
+                ] as const).map(({ key, label }) => (
+                  <Button
+                    key={key}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setModel(key)}
+                    className={`h-7 text-xs ${
+                      model === key
+                        ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400 hover:bg-amber-500/25'
+                        : ''
+                    }`}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
             <Button
               onClick={() => handleStart()}
               disabled={!prompt.trim() || isCreating}

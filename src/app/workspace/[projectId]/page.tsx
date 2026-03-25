@@ -48,6 +48,19 @@ export default function WorkspacePage() {
       if (savedMessages.length === 0) {
         const storageKey = `project_${projectId}_prompt`
         const initialPrompt = sessionStorage.getItem(storageKey)
+
+        // Apply mode and model from homepage selection
+        const savedMode = sessionStorage.getItem(`project_${projectId}_mode`)
+        const savedModel = sessionStorage.getItem(`project_${projectId}_model`)
+        if (savedMode) {
+          useWorkspaceStore.getState().setMode(savedMode as 'engineer' | 'team' | 'agent')
+          sessionStorage.removeItem(`project_${projectId}_mode`)
+        }
+        if (savedModel) {
+          useWorkspaceStore.getState().setModel(savedModel as 'claude' | 'openai' | 'gemini')
+          sessionStorage.removeItem(`project_${projectId}_model`)
+        }
+
         if (initialPrompt) {
           sessionStorage.removeItem(storageKey)
           setPendingPrompt(initialPrompt)
