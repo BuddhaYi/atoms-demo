@@ -86,10 +86,9 @@ export function runAgentLoop(config: AgentLoopConfig): ReadableStream<Uint8Array
 
           totalTokens += response.tokensUsed
 
-          // Emit text content if any
+          // Emit text content if any (strip :::files blocks — handled by fallback extractor)
           if (response.content.trim()) {
-            // Strip <think> blocks
-            const cleanContent = stripThinkBlocks(response.content)
+            const cleanContent = stripFilesBlocks(stripThinkBlocks(response.content))
             if (cleanContent.trim()) {
               emit(controller, encoder, {
                 type: 'agent_message',
@@ -248,6 +247,14 @@ function emit(
 
 function stripThinkBlocks(text: string): string {
   return text.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
+}
+
+function stripFilesBlocks(text: string): string {
+  return text
+    .replace(/```json\s*:::files[\s\S]*/g, '')
+    .replace(/:::files[\s\S]*?:::/g, '')
+    .replace(/:::files[\s\S]*/g, '')
+    .trim()
 }
 
 /**

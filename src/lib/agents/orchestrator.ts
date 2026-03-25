@@ -158,9 +158,9 @@ async function runSingleAgentLoop(params: SingleAgentLoopParams): Promise<number
     const response = await callModelWithTools(model, systemPrompt, messages)
     totalTokens += response.tokensUsed
 
-    // Emit text content
+    // Emit text content (strip :::files blocks — those are handled by the fallback extractor)
     if (response.content.trim()) {
-      const cleanContent = stripThinkBlocks(response.content)
+      const cleanContent = stripFilesBlocks(stripThinkBlocks(response.content))
       if (cleanContent.trim()) {
         emit(controller, encoder, {
           type: 'agent_message',
@@ -244,6 +244,15 @@ function emit(
 
 function stripThinkBlocks(text: string): string {
   return text.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
+}
+
+function stripFilesBlocks(text: string): string {
+  // Remove :::files...::: blocks and ```json :::files blocks
+  return text
+    .replace(/```json\s*:::files[\s\S]*/g, '')
+    .replace(/:::files[\s\S]*?:::/g, '')
+    .replace(/:::files[\s\S]*/g, '')
+    .trim()
 }
 
 function extractFilesFromText(text: string): Record<string, string> {
