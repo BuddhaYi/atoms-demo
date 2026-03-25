@@ -29,7 +29,7 @@ export async function callModelWithTools(
         url: 'https://api.deepseek.com/v1/chat/completions',
         apiKey: process.env.DEEPSEEK_API_KEY || '',
         model: 'deepseek-coder',
-        maxTokens: 16384,
+        maxTokens: 8192,
       },
       systemPrompt,
       messages,
@@ -330,7 +330,7 @@ async function streamFromDeepSeek(
     },
     body: JSON.stringify({
       model: 'deepseek-coder',
-      max_tokens: 16384,
+      max_tokens: 8192,
       messages,
       stream: true,
     }),
