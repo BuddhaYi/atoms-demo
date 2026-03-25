@@ -138,6 +138,12 @@ export function useAgentChat() {
                     metadata: { tool: event.tool },
                     timestamp: new Date().toISOString(),
                   })
+                  // Immediately merge write_file into currentCode for real-time preview
+                  if (event.tool.name === 'write_file' && event.tool.input.path && event.tool.input.content) {
+                    const filePath = String(event.tool.input.path)
+                    const normalizedPath = filePath.startsWith('/') ? filePath : `/${filePath}`
+                    mergeCode({ [normalizedPath]: String(event.tool.input.content) })
+                  }
                   // Add tool call as a message
                   const toolMsg: ChatMessage = {
                     id: crypto.randomUUID(),

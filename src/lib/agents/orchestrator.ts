@@ -103,18 +103,10 @@ export function runOrchestrator(config: OrchestratorConfig): ReadableStream<Uint
           }
         }
 
-        // Emit final code from all files written by all agents
+        // Emit final code from all files written by all agents (include all files)
         const finalFiles = executor.getFiles()
-        // Filter out non-code files (requirements.md, architecture.md)
-        const codeFiles: Record<string, string> = {}
-        for (const [path, content] of Object.entries(finalFiles)) {
-          if (!path.endsWith('.md') || path === '/README.md') {
-            codeFiles[path] = content
-          }
-        }
-
-        if (Object.keys(codeFiles).length > 0) {
-          emit(controller, encoder, { type: 'code_complete', files: codeFiles })
+        if (Object.keys(finalFiles).length > 0) {
+          emit(controller, encoder, { type: 'code_complete', files: finalFiles })
         }
 
         emit(controller, encoder, { type: 'done', tokens_used: totalTokens })
