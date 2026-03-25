@@ -15,7 +15,7 @@ interface OrchestratorConfig {
   timeoutMs?: number
 }
 
-const DEFAULT_TIMEOUT_MS = 180_000 // 3 minutes for full pipeline
+const DEFAULT_TIMEOUT_MS = 300_000 // 5 minutes for full pipeline
 
 export function runOrchestrator(config: OrchestratorConfig): ReadableStream<Uint8Array> {
   const {

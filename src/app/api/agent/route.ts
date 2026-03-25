@@ -7,7 +7,7 @@ import { isE2BConfigured, getOrCreateSession } from '@/lib/sandbox/session-manag
 import type { ModelProvider } from '@/types'
 
 export const runtime = 'nodejs'
-export const maxDuration = 120
+export const maxDuration = 300
 
 export async function POST(request: NextRequest) {
   try {
