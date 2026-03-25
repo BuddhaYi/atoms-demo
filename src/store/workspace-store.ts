@@ -102,7 +102,7 @@ const initialState = {
   lastUserPrompt: '',
   agentIterations: null as { current: number; max: number } | null,
   agentSteps: [] as AgentStep[],
-  multiAgent: false,
+  multiAgent: true,
   qaErrors: [] as string[],
   qaAttempts: 0,
   qaEnabled: true,

@@ -119,20 +119,74 @@ ${ctx.existingCode ? `\n## Existing Code\nThere is existing code. Use read_file 
   },
 ]
 
+const TEXT_ONLY_AGENTS: AgentConfig[] = [
+  {
+    name: 'emma',
+    availableTools: [],
+    maxIterations: 1,
+    outputArtifact: 'requirements',
+    buildSystemPrompt: (ctx) => `You are Emma, an expert Product Manager. Analyze the user's request and create a requirements document.
+
+Output ONLY a :::files block containing /requirements.md:
+
+:::files
+{"/requirements.md": "# Requirements\\n\\n## Project Overview\\n...\\n\\n## Core Features\\n1. ...\\n2. ..."}
+:::
+
+Be specific and actionable. The architect and engineer will work from this document.
+${ctx.existingCode ? `\nExisting code is present — focus on what to change/add.` : ''}`,
+  },
+  {
+    name: 'bob',
+    availableTools: [],
+    maxIterations: 1,
+    outputArtifact: 'architecture',
+    buildSystemPrompt: (ctx) => {
+      const req = ctx.artifacts.requirements || ''
+      return `You are Bob, an expert Software Architect. Design the component architecture.
+
+${req ? `## Requirements (from Emma)\n${req}\n` : ''}
+Output ONLY a :::files block containing /architecture.md:
+
+:::files
+{"/architecture.md": "# Architecture\\n\\n## Component Tree\\nApp\\n├── Header\\n├── Main\\n└── Footer\\n\\n## File Structure\\n- /App.js\\n- /components/Header.js\\n..."}
+:::
+
+Use React + Tailwind CSS. The entry point must be /App.js.`
+    },
+  },
+  {
+    name: 'alex',
+    availableTools: [],
+    maxIterations: 1,
+    outputArtifact: 'code',
+    buildSystemPrompt: (ctx) => {
+      const req = ctx.artifacts.requirements || ''
+      const arch = ctx.artifacts.architecture || ''
+      return `You are Alex, an expert Full-Stack Engineer. Implement the application.
+
+${req ? `## Requirements\n${req}\n` : ''}
+${arch ? `## Architecture\n${arch}\n` : ''}
+
+Output ALL code files in a single :::files JSON block. Write COMPLETE file contents.
+/App.js is REQUIRED with a default export. Use React + Tailwind CSS + lucide-react.
+Available packages: react, react-dom, recharts, lucide-react, date-fns, Tailwind CSS (CDN).
+
+:::files
+{"/App.js": "import React...full code...", "/components/Header.js": "..."}
+:::
+
+Make the UI beautiful and fully functional. Use \\n for newlines, \\" for quotes in the JSON strings.`
+    },
+  },
+]
+
 /**
  * Get agent configs for orchestrator mode.
- * For text-only models (Gemini), returns a single Alex agent with combined prompt.
  */
 export function getOrchestratorAgents(textOnly: boolean): AgentConfig[] {
   if (textOnly) {
-    // For models without tool calling, run a single combined agent
-    return [{
-      name: 'alex',
-      availableTools: ['read_file', 'write_file', 'list_files', 'run_command'],
-      maxIterations: 1,
-      outputArtifact: 'code',
-      buildSystemPrompt: () => '', // Will use the textOnly prompt from agent-system.ts
-    }]
+    return TEXT_ONLY_AGENTS
   }
   return ORCHESTRATOR_AGENTS
 }

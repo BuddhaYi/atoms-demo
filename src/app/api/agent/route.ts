@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
 
     let stream: ReadableStream<Uint8Array>
 
-    if (multiAgent && !textOnly) {
+    if (multiAgent) {
       // P2: Multi-agent orchestration (Emma → Bob → Alex)
       const agents = getOrchestratorAgents(textOnly)
       stream = runOrchestrator({
