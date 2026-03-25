@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback, useState } from 'react'
 import { useWorkspaceStore } from '@/store/workspace-store'
-import { useChat } from '@/hooks/useChat'
+import { useChatDispatch } from '@/hooks/useChatDispatch'
 import { useQA } from '@/hooks/useQA'
 import { ChatPanel } from '@/components/workspace/ChatPanel'
 import { PreviewPanel } from '@/components/workspace/PreviewPanel'
@@ -14,7 +14,7 @@ export default function WorkspacePage() {
   const params = useParams()
   const projectId = params.projectId as string
   const { setProjectId, setProjectTitle, reset, messages, versions } = useWorkspaceStore()
-  const { sendMessage } = useChat()
+  const { sendMessage } = useChatDispatch()
   useQA(sendMessage)
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null)
 

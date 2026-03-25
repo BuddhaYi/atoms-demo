@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Monitor, Smartphone, Terminal, Bug, ClipboardCheck, Code2, FolderOpen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useWorkspaceStore } from '@/store/workspace-store'
-import { useChat } from '@/hooks/useChat'
+import { useChatDispatch } from '@/hooks/useChatDispatch'
 import { useTranslation } from '@/hooks/useTranslation'
 import { SandpackPreview } from './SandpackPreview'
 import { CodeEditorPanel } from './CodeEditorPanel'
@@ -23,7 +23,7 @@ export function PreviewPanel() {
     setShowConsole,
     isGenerating,
   } = useWorkspaceStore()
-  const { sendMessage } = useChat()
+  const { sendMessage } = useChatDispatch()
   const { t } = useTranslation()
   const [showReview, setShowReview] = useState(false)
   const [activeView, setActiveView] = useState<ActiveView>('preview')

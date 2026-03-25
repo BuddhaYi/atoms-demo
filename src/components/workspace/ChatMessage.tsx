@@ -7,6 +7,8 @@ import type { TranslationKey } from '@/i18n'
 import { FeatureListCard } from './FeatureListCard'
 import { ArchitectureCard } from './ArchitectureCard'
 import { PromptOptionsCard } from './PromptOptionsCard'
+import { ToolCallCard } from './ToolCallCard'
+import { ThinkingBlock } from './ThinkingBlock'
 
 interface ChatMessageProps {
   message: ChatMessageType
@@ -67,6 +69,17 @@ export function ChatMessage({ message }: ChatMessageProps) {
             <FeatureListCard content={message.content} />
           ) : message.content_type === 'architecture' ? (
             <ArchitectureCard content={message.content} />
+          ) : message.content_type === 'tool_call' ? (
+            <ToolCallCard toolName={message.content} content="Running..." />
+          ) : message.content_type === 'tool_result' ? (
+            <ToolCallCard
+              toolName={(message.metadata as Record<string, unknown>)?.tool_name as string || 'tool'}
+              content={message.content}
+              isResult
+              isError={!!(message.metadata as Record<string, unknown>)?.is_error}
+            />
+          ) : message.content_type === 'thinking' ? (
+            <ThinkingBlock content={message.content} />
           ) : (
             <div className="bg-muted/50 rounded-xl px-4 py-3 whitespace-pre-wrap">
               {message.content}

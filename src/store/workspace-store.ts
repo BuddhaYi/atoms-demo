@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type {
   AgentName,
+  AgentStep,
   ChatMessage,
   CodeVersion,
   ModelProvider,
@@ -34,6 +35,11 @@ interface WorkspaceState {
   pendingFeatures: Array<{ text: string; approved: boolean }> | null
   awaitingApproval: boolean
   lastUserPrompt: string
+
+  // Agent loop
+  agentIterations: { current: number; max: number } | null
+  agentSteps: AgentStep[]
+  multiAgent: boolean
 
   // QA
   qaErrors: string[]
@@ -69,6 +75,10 @@ interface WorkspaceState {
   setAwaitingApproval: (v: boolean) => void
   setLastUserPrompt: (prompt: string) => void
   toggleFeatureApproval: (index: number) => void
+  setAgentIterations: (v: { current: number; max: number } | null) => void
+  addAgentStep: (step: AgentStep) => void
+  clearAgentSteps: () => void
+  setMultiAgent: (v: boolean) => void
   setQaErrors: (errors: string[]) => void
   incrementQaAttempts: () => void
   resetQa: () => void
@@ -90,6 +100,9 @@ const initialState = {
   pendingFeatures: null as Array<{ text: string; approved: boolean }> | null,
   awaitingApproval: false,
   lastUserPrompt: '',
+  agentIterations: null as { current: number; max: number } | null,
+  agentSteps: [] as AgentStep[],
+  multiAgent: false,
   qaErrors: [] as string[],
   qaAttempts: 0,
   qaEnabled: true,
@@ -170,6 +183,11 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         ),
       }
     }),
+  setAgentIterations: (v) => set({ agentIterations: v }),
+  addAgentStep: (step) =>
+    set((state) => ({ agentSteps: [...state.agentSteps, step] })),
+  clearAgentSteps: () => set({ agentSteps: [], agentIterations: null }),
+  setMultiAgent: (v) => set({ multiAgent: v }),
   setQaErrors: (errors) => set({ qaErrors: errors }),
   incrementQaAttempts: () =>
     set((state) => ({ qaAttempts: state.qaAttempts + 1 })),

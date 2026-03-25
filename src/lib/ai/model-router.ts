@@ -1,4 +1,201 @@
-import type { ModelProvider } from '@/types'
+import type { ModelProvider, ToolCall } from '@/types'
+import { getClaudeTools, getOpenAITools } from '@/lib/agents/tools/tool-definitions'
+
+// --- Non-streaming tool-use call for Agent Loop ---
+
+export interface ModelResponse {
+  content: string
+  toolCalls: ToolCall[]
+  stopReason: 'end_turn' | 'tool_use' | 'max_tokens'
+  tokensUsed: number
+}
+
+export async function callModelWithTools(
+  model: ModelProvider,
+  systemPrompt: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  messages: Array<{ role: string; content: any }>,
+): Promise<ModelResponse> {
+  if (model === 'claude') {
+    return callClaudeWithTools(systemPrompt, messages)
+  }
+  if (model === 'gemini') {
+    // Gemini proxy doesn't support function calling — use text-only mode
+    return callGeminiTextOnly(systemPrompt, messages)
+  }
+  return callOpenAICompatibleWithTools(
+    {
+      url: 'https://api.openai.com/v1/chat/completions',
+      apiKey: process.env.OPENAI_API_KEY || '',
+      model: 'gpt-4o',
+    },
+    systemPrompt,
+    messages,
+  )
+}
+
+function getGeminiConfig() {
+  const apiKey = process.env.GEMINI_API_KEY || ''
+  const baseUrl = (process.env.GEMINI_BASE_URL || 'https://grsai.com/v1').replace(/\/+$/, '')
+  const modelName = process.env.GEMINI_MODEL || 'gemini-3.1-pro'
+  return { url: `${baseUrl}/chat/completions`, apiKey, model: modelName }
+}
+
+async function callClaudeWithTools(
+  systemPrompt: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  messages: Array<{ role: string; content: any }>,
+): Promise<ModelResponse> {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': process.env.ANTHROPIC_API_KEY || '',
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 8192,
+      system: systemPrompt,
+      messages,
+      tools: getClaudeTools(),
+    }),
+  })
+
+  if (!response.ok) {
+    const text = await response.text()
+    throw new Error(`Claude API error: ${response.status} ${text}`)
+  }
+
+  const data = await response.json()
+  let content = ''
+  const toolCalls: ToolCall[] = []
+
+  for (const block of data.content || []) {
+    if (block.type === 'text') {
+      content += block.text
+    } else if (block.type === 'tool_use') {
+      toolCalls.push({
+        id: block.id,
+        name: block.name,
+        input: block.input,
+      })
+    }
+  }
+
+  const stopReason = data.stop_reason === 'tool_use' ? 'tool_use'
+    : data.stop_reason === 'max_tokens' ? 'max_tokens'
+    : 'end_turn'
+
+  return {
+    content,
+    toolCalls,
+    stopReason,
+    tokensUsed: (data.usage?.input_tokens || 0) + (data.usage?.output_tokens || 0),
+  }
+}
+
+async function callOpenAICompatibleWithTools(
+  config: { url: string; apiKey: string; model: string },
+  systemPrompt: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  messages: Array<{ role: string; content: any }>,
+): Promise<ModelResponse> {
+  const openaiMessages = [
+    { role: 'system', content: systemPrompt },
+    ...messages,
+  ]
+
+  const response = await fetch(config.url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${config.apiKey}`,
+    },
+    body: JSON.stringify({
+      model: config.model,
+      max_tokens: 8192,
+      messages: openaiMessages,
+      tools: getOpenAITools(),
+    }),
+  })
+
+  if (!response.ok) {
+    const text = await response.text()
+    throw new Error(`API error: ${response.status} ${text}`)
+  }
+
+  const data = await response.json()
+  const choice = data.choices?.[0]
+  const message = choice?.message
+
+  const content = message?.content || ''
+  const toolCalls: ToolCall[] = (message?.tool_calls || []).map(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (tc: any) => ({
+      id: tc.id,
+      name: tc.function.name,
+      input: JSON.parse(tc.function.arguments || '{}'),
+    })
+  )
+
+  const stopReason = choice?.finish_reason === 'tool_calls' ? 'tool_use'
+    : choice?.finish_reason === 'length' ? 'max_tokens'
+    : 'end_turn'
+
+  return {
+    content,
+    toolCalls,
+    stopReason,
+    tokensUsed: (data.usage?.prompt_tokens || 0) + (data.usage?.completion_tokens || 0),
+  }
+}
+
+/** Gemini text-only mode (no tools param, uses :::files fallback format) */
+async function callGeminiTextOnly(
+  systemPrompt: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  messages: Array<{ role: string; content: any }>,
+): Promise<ModelResponse> {
+  const config = getGeminiConfig()
+
+  const openaiMessages = [
+    { role: 'system', content: systemPrompt },
+    ...messages.map((m) => ({
+      role: m.role,
+      content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content),
+    })),
+  ]
+
+  const response = await fetch(config.url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${config.apiKey}`,
+    },
+    body: JSON.stringify({
+      model: config.model,
+      max_tokens: 8192,
+      messages: openaiMessages,
+    }),
+  })
+
+  if (!response.ok) {
+    const text = await response.text()
+    throw new Error(`Gemini API error: ${response.status} ${text}`)
+  }
+
+  const data = await response.json()
+  const choice = data.choices?.[0]
+  const content = choice?.message?.content || ''
+
+  return {
+    content,
+    toolCalls: [],
+    stopReason: 'end_turn',
+    tokensUsed: (data.usage?.prompt_tokens || 0) + (data.usage?.completion_tokens || 0),
+  }
+}
 
 export async function streamFromModel(
   model: ModelProvider,

@@ -1,7 +1,7 @@
 'use client'
 
 import { useWorkspaceStore } from '@/store/workspace-store'
-import { useChat } from '@/hooks/useChat'
+import { useChatDispatch } from '@/hooks/useChatDispatch'
 import { useTranslation } from '@/hooks/useTranslation'
 import { Sparkles } from 'lucide-react'
 
@@ -11,7 +11,7 @@ interface PromptOptionsCardProps {
 
 export function PromptOptionsCard({ content }: PromptOptionsCardProps) {
   const { t } = useTranslation()
-  const { selectPrompt } = useChat()
+  const { selectPrompt } = useChatDispatch()
   const awaitingSelection = useWorkspaceStore((s) => s.awaitingPromptSelection)
   const pendingOptions = useWorkspaceStore((s) => s.pendingPromptOptions)
   const isGenerating = useWorkspaceStore((s) => s.isGenerating)

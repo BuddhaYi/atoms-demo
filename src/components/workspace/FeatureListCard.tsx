@@ -3,7 +3,7 @@
 import { ListChecks, Check, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useWorkspaceStore } from '@/store/workspace-store'
-import { useChat } from '@/hooks/useChat'
+import { useChatDispatch } from '@/hooks/useChatDispatch'
 import { useTranslation } from '@/hooks/useTranslation'
 
 interface FeatureListCardProps {
@@ -14,7 +14,7 @@ export function FeatureListCard({ content }: FeatureListCardProps) {
   const { t } = useTranslation()
   const { pendingFeatures, awaitingApproval, isGenerating } = useWorkspaceStore()
   const { toggleFeatureApproval, setAwaitingApproval, setPendingFeatures } = useWorkspaceStore()
-  const { approveFeatures, sendMessage } = useChat()
+  const { approveFeatures, sendMessage } = useChatDispatch()
 
   const items = content
     .split('\n')

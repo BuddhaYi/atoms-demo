@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowLeft, Download, Moon, Sun, Zap, Users, Globe } from 'lucide-react'
+import { ArrowLeft, Download, Moon, Sun, Zap, Users, Globe, Bot } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useWorkspaceStore } from '@/store/workspace-store'
@@ -21,6 +21,8 @@ export function TopBar({ onExport }: TopBarProps) {
     setModel,
     currentVersionNumber,
     tokensUsed,
+    multiAgent,
+    setMultiAgent,
   } = useWorkspaceStore()
   const { theme, setTheme } = useTheme()
   const { t, locale, setLocale } = useTranslation()
@@ -77,7 +79,37 @@ export function TopBar({ onExport }: TopBarProps) {
             <Users className="w-3 h-3 mr-1" />
             {t('top.team')}
           </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setMode('agent')}
+            className={`h-7 text-xs ${
+              mode === 'agent'
+                ? 'bg-violet-500/15 text-violet-700 dark:text-violet-400 hover:bg-violet-500/25'
+                : ''
+            }`}
+          >
+            <Bot className="w-3 h-3 mr-1" />
+            Agent
+          </Button>
         </div>
+
+        {/* Multi-agent toggle (only shown in agent mode) */}
+        {mode === 'agent' && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setMultiAgent(!multiAgent)}
+            className={`h-7 text-xs ${
+              multiAgent
+                ? 'bg-violet-500/15 text-violet-700 dark:text-violet-400 hover:bg-violet-500/25'
+                : 'text-muted-foreground'
+            }`}
+          >
+            <Users className="w-3 h-3 mr-1" />
+            {multiAgent ? 'Multi-Agent' : 'Solo'}
+          </Button>
+        )}
 
         {/* Model toggle */}
         <div className="flex items-center bg-muted rounded-lg p-0.5">

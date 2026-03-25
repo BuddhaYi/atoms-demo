@@ -2,15 +2,16 @@
 
 import { useEffect, useRef } from 'react'
 import { useWorkspaceStore } from '@/store/workspace-store'
-import { useChat } from '@/hooks/useChat'
+import { useChatDispatch } from '@/hooks/useChatDispatch'
 import { useTranslation } from '@/hooks/useTranslation'
 import { ChatMessage } from './ChatMessage'
 import { ChatInput } from './ChatInput'
 import { AgentIndicator } from './AgentIndicator'
+import { AgentTimeline } from './AgentTimeline'
 
 export function ChatPanel() {
-  const { messages, activeAgent, isGenerating } = useWorkspaceStore()
-  const { sendMessage, stopGeneration } = useChat()
+  const { messages, activeAgent, isGenerating, mode, multiAgent } = useWorkspaceStore()
+  const { sendMessage, stopGeneration } = useChatDispatch()
   const { t } = useTranslation()
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -21,8 +22,12 @@ export function ChatPanel() {
     }
   }, [messages, activeAgent])
 
+  const showTimeline = mode === 'agent' && multiAgent && isGenerating
+
   return (
     <div className="flex flex-col h-full">
+      {/* Agent Timeline (multi-agent mode) */}
+      {showTimeline && <AgentTimeline />}
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-1">
         {messages.length === 0 && (

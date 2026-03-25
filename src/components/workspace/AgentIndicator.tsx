@@ -1,6 +1,7 @@
 'use client'
 
 import { AGENTS } from '@/lib/agents/registry'
+import { useWorkspaceStore } from '@/store/workspace-store'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { AgentName } from '@/types'
 import type { TranslationKey } from '@/i18n'
@@ -12,6 +13,7 @@ interface AgentIndicatorProps {
 export function AgentIndicator({ agentName }: AgentIndicatorProps) {
   const agent = AGENTS[agentName]
   const { t } = useTranslation()
+  const agentIterations = useWorkspaceStore((s) => s.agentIterations)
 
   const actionKey = `agent.action.${agentName}` as TranslationKey
 
@@ -32,6 +34,11 @@ export function AgentIndicator({ agentName }: AgentIndicatorProps) {
       <div className="flex items-center gap-2">
         <span className="text-sm font-medium">{agent.displayName}</span>
         <span className="text-xs text-muted-foreground">{t('agent.is')} {t(actionKey)}...</span>
+        {agentIterations && (
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+            Step {agentIterations.current}/{agentIterations.max}
+          </span>
+        )}
         <div className="flex gap-0.5">
           <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: '0ms' }} />
           <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: '150ms' }} />
