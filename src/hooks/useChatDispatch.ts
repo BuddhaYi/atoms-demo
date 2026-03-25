@@ -13,6 +13,10 @@ export function useChatDispatch() {
   const sendMessage = useCallback(
     async (message: string, options?: { error?: string; phase?: 'optimize' | 'plan' | 'implement'; approvedFeatures?: string[] }) => {
       if (mode === 'agent') {
+        // Convert error option into a fix message for agent mode
+        if (options?.error) {
+          return agentChat.sendMessage(`Fix this runtime error in the code:\n\n${options.error}`)
+        }
         return agentChat.sendMessage(message)
       }
       return chat.sendMessage(message, options)
