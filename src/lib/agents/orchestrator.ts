@@ -248,19 +248,33 @@ function stripThinkBlocks(text: string): string {
 
 function extractFilesFromText(text: string): Record<string, string> {
   const files: Record<string, string> = {}
-  const filesBlockMatch = text.match(/:::files\s*([\s\S]*?):::/)
+  const filesBlockMatch = text.match(/:::files\s*([\s\S]*)/)
   if (filesBlockMatch) {
-    try {
-      const jsonMatch = filesBlockMatch[1].trim().match(/\{[\s\S]*\}/)
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0])
+    let jsonStr = filesBlockMatch[1].replace(/:::$/, '').trim()
+    const jsonMatch = jsonStr.match(/\{[\s\S]*/)
+    if (jsonMatch) {
+      jsonStr = jsonMatch[0]
+      try {
+        const parsed = JSON.parse(jsonStr)
         for (const [key, value] of Object.entries(parsed)) {
           if (typeof value === 'string') {
             files[key.startsWith('/') ? key : `/${key}`] = value
           }
         }
+        return files
+      } catch {
+        // JSON truncated — extract complete key-value pairs
+        const pairRegex = /"(\/[^"]+)":\s*"((?:[^"\\]|\\.)*)"/g
+        let pairMatch
+        while ((pairMatch = pairRegex.exec(jsonStr)) !== null) {
+          try {
+            files[pairMatch[1]] = JSON.parse(`"${pairMatch[2]}"`)
+          } catch {
+            files[pairMatch[1]] = pairMatch[2].replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\')
+          }
+        }
       }
-    } catch { /* ignore parse errors */ }
+    }
   }
   return files
 }

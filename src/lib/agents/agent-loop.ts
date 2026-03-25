@@ -259,37 +259,50 @@ function stripThinkBlocks(text: string): string {
 function extractFilesFromText(text: string): Record<string, string> {
   const files: Record<string, string> = {}
 
-  // Try :::files JSON block first
-  const filesBlockMatch = text.match(/:::files\s*([\s\S]*?):::/)
+  // Try :::files JSON block first (may or may not have closing :::)
+  const filesBlockMatch = text.match(/:::files\s*([\s\S]*)/)
   if (filesBlockMatch) {
-    try {
-      const jsonStr = filesBlockMatch[1].trim()
-      const jsonMatch = jsonStr.match(/\{[\s\S]*\}/)
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0])
+    let jsonStr = filesBlockMatch[1].replace(/:::$/, '').trim()
+    const jsonMatch = jsonStr.match(/\{[\s\S]*/)
+    if (jsonMatch) {
+      jsonStr = jsonMatch[0]
+      // Try parsing as-is first
+      try {
+        const parsed = JSON.parse(jsonStr)
         for (const [key, value] of Object.entries(parsed)) {
           if (typeof value === 'string') {
-            const normalizedKey = key.startsWith('/') ? key : `/${key}`
-            files[normalizedKey] = value
+            files[key.startsWith('/') ? key : `/${key}`] = value
           }
         }
         return files
+      } catch {
+        // JSON might be truncated — extract complete key-value pairs using regex
+        const pairRegex = /"(\/[^"]+)":\s*"((?:[^"\\]|\\.)*)"/g
+        let pairMatch
+        while ((pairMatch = pairRegex.exec(jsonStr)) !== null) {
+          const filePath = pairMatch[1]
+          // Unescape the value
+          const rawValue = pairMatch[2]
+          try {
+            const unescaped = JSON.parse(`"${rawValue}"`)
+            files[filePath] = unescaped
+          } catch {
+            files[filePath] = rawValue.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\')
+          }
+        }
+        if (Object.keys(files).length > 0) return files
       }
-    } catch {
-      // Fall through to code block parsing
     }
   }
 
   // Try ```filename code blocks
-  // Pattern: **`/path/to/file`** or ### /path/to/file followed by ```code```
   const codeBlockRegex = /(?:(?:\*\*`?|###?\s*)([/\w.-]+\.\w+)`?\*\*|(?:^|\n)([/\w.-]+\.\w+)\s*\n)[\s\S]*?```[\w]*\n([\s\S]*?)```/g
   let match
   while ((match = codeBlockRegex.exec(text)) !== null) {
     const filePath = match[1] || match[2]
     const code = match[3]
     if (filePath && code) {
-      const normalizedPath = filePath.startsWith('/') ? filePath : `/${filePath}`
-      files[normalizedPath] = code.trim()
+      files[filePath.startsWith('/') ? filePath : `/${filePath}`] = code.trim()
     }
   }
 

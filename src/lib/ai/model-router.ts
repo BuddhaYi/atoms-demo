@@ -29,6 +29,7 @@ export async function callModelWithTools(
         url: 'https://api.deepseek.com/v1/chat/completions',
         apiKey: process.env.DEEPSEEK_API_KEY || '',
         model: 'deepseek-chat',
+        maxTokens: 16384,
       },
       systemPrompt,
       messages,
@@ -107,7 +108,7 @@ async function callClaudeWithTools(
 }
 
 async function callOpenAICompatibleWithTools(
-  config: { url: string; apiKey: string; model: string },
+  config: { url: string; apiKey: string; model: string; maxTokens?: number },
   systemPrompt: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   messages: Array<{ role: string; content: any }>,
@@ -125,7 +126,7 @@ async function callOpenAICompatibleWithTools(
     },
     body: JSON.stringify({
       model: config.model,
-      max_tokens: 8192,
+      max_tokens: config.maxTokens || 8192,
       messages: openaiMessages,
       tools: getOpenAITools(),
     }),
@@ -329,7 +330,7 @@ async function streamFromDeepSeek(
     },
     body: JSON.stringify({
       model: 'deepseek-chat',
-      max_tokens: 8192,
+      max_tokens: 16384,
       messages,
       stream: true,
     }),
