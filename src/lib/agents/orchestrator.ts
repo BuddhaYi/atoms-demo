@@ -44,6 +44,15 @@ export function runOrchestrator(config: OrchestratorConfig): ReadableStream<Uint
         const artifacts: Record<string, string> = {}
         let totalTokens = 0
 
+        // Check for existing artifacts to skip completed agents
+        const existingFiles = executor.getFiles()
+        if (existingFiles['/requirements.md']) {
+          artifacts.requirements = existingFiles['/requirements.md']
+        }
+        if (existingFiles['/architecture.md']) {
+          artifacts.architecture = existingFiles['/architecture.md']
+        }
+
         for (let agentIdx = 0; agentIdx < agents.length; agentIdx++) {
           if (aborted) {
             emit(controller, encoder, { type: 'error', message: 'Orchestrator timed out' })
@@ -51,6 +60,27 @@ export function runOrchestrator(config: OrchestratorConfig): ReadableStream<Uint
           }
 
           const agentConfig = agents[agentIdx]
+
+          // Skip agents whose artifacts already exist
+          if (agentConfig.outputArtifact && artifacts[agentConfig.outputArtifact]) {
+            emit(controller, encoder, {
+              type: 'agent_start',
+              agent: agentConfig.name,
+              message: '',
+            })
+            emit(controller, encoder, {
+              type: 'agent_message',
+              agent: agentConfig.name,
+              content: `${agentConfig.outputArtifact === 'requirements' ? '/requirements.md' : '/architecture.md'} already exists, skipping.`,
+              content_type: 'text',
+            })
+            emit(controller, encoder, {
+              type: 'agent_end',
+              agent: agentConfig.name,
+            })
+            continue
+          }
+
           const context: AgentContext = {
             userMessage,
             existingCode: Object.keys(initialFiles).length > 0 ? initialFiles : undefined,
