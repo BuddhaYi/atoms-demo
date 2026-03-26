@@ -185,7 +185,16 @@ async function runSingleAgentLoop(params: SingleAgentLoopParams): Promise<number
 
     emit(controller, encoder, { type: 'iteration', current: i + 1, max: maxIterations })
 
-    const response = await callModelWithTools(model, systemPrompt, messages)
+    // Heartbeat to keep SSE connection alive during LLM call
+    const heartbeat = setInterval(() => {
+      controller.enqueue(encoder.encode(': heartbeat\n\n'))
+    }, 10_000)
+    let response
+    try {
+      response = await callModelWithTools(model, systemPrompt, messages)
+    } finally {
+      clearInterval(heartbeat)
+    }
     totalTokens += response.tokensUsed
 
     // Emit text content (strip :::files blocks — those are handled by the fallback extractor)

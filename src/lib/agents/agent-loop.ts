@@ -77,12 +77,16 @@ export function runAgentLoop(config: AgentLoopConfig): ReadableStream<Uint8Array
             max: maxIterations,
           })
 
-          // Call LLM with tools
-          const response = await callModelWithTools(
-            model,
-            systemPrompt,
-            messages,
-          )
+          // Call LLM with tools (heartbeat keeps SSE alive during long API calls)
+          const heartbeat = setInterval(() => {
+            controller.enqueue(encoder.encode(': heartbeat\n\n'))
+          }, 10_000)
+          let response
+          try {
+            response = await callModelWithTools(model, systemPrompt, messages)
+          } finally {
+            clearInterval(heartbeat)
+          }
 
           totalTokens += response.tokensUsed
 
