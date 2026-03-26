@@ -105,7 +105,7 @@ export function runAgentLoop(config: AgentLoopConfig): ReadableStream<Uint8Array
 
           // If no tool calls, try text-based file extraction fallback
           // (for models that don't support function calling, e.g. Gemini proxy)
-          if (response.toolCalls.length === 0 || response.stopReason === 'end_turn') {
+          if (response.toolCalls.length === 0) {
             const cleanText = stripThinkBlocks(response.content)
             const extractedFiles = extractFilesFromText(cleanText)
             if (Object.keys(extractedFiles).length > 0) {

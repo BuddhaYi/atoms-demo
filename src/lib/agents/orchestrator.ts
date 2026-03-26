@@ -211,7 +211,7 @@ async function runSingleAgentLoop(params: SingleAgentLoopParams): Promise<number
     }
 
     // If no tool calls, try text fallback and break
-    if (response.toolCalls.length === 0 || response.stopReason === 'end_turn') {
+    if (response.toolCalls.length === 0) {
       const cleanText = stripThinkBlocks(response.content)
       const extractedFiles = extractFilesFromText(cleanText)
       for (const [path, content] of Object.entries(extractedFiles)) {
