@@ -142,14 +142,29 @@ async function callOpenAICompatibleWithTools(
   const message = choice?.message
 
   const content = message?.content || ''
-  const toolCalls: ToolCall[] = (message?.tool_calls || []).map(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (tc: any) => ({
-      id: tc.id,
-      name: tc.function.name,
-      input: JSON.parse(tc.function.arguments || '{}'),
-    })
-  )
+  const toolCalls: ToolCall[] = []
+  for (const tc of message?.tool_calls || []) {
+    let input: Record<string, unknown> = {}
+    try {
+      input = JSON.parse(tc.function.arguments || '{}')
+    } catch {
+      // Arguments truncated by max_tokens — try to salvage partial write_file
+      if (tc.function.name === 'write_file') {
+        const args = tc.function.arguments || ''
+        const pathMatch = args.match(/"path"\s*:\s*"([^"]+)"/)
+        const contentMatch = args.match(/"content"\s*:\s*"((?:[^"\\]|\\.)*)/)
+        if (pathMatch) {
+          const partialContent = contentMatch
+            ? contentMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\').replace(/\\t/g, '\t')
+            : '// File content was truncated'
+          input = { path: pathMatch[1], content: partialContent }
+        }
+      }
+    }
+    if (Object.keys(input).length > 0) {
+      toolCalls.push({ id: tc.id, name: tc.function.name, input })
+    }
+  }
 
   const stopReason = choice?.finish_reason === 'tool_calls' ? 'tool_use'
     : choice?.finish_reason === 'length' ? 'max_tokens'
