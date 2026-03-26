@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Monitor, Smartphone, Terminal, Bug, ClipboardCheck, Code2, FolderOpen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useWorkspaceStore } from '@/store/workspace-store'
@@ -22,11 +22,28 @@ export function PreviewPanel() {
     setPreviewDevice,
     setShowConsole,
     isGenerating,
+    streamingFileContent,
+    mode,
   } = useWorkspaceStore()
   const { sendMessage } = useChatDispatch()
   const { t } = useTranslation()
   const [showReview, setShowReview] = useState(false)
   const [activeView, setActiveView] = useState<ActiveView>('preview')
+
+  // Auto-switch to editor when agent writes files, back to preview when done
+  useEffect(() => {
+    if (streamingFileContent && mode === 'agent') {
+      setActiveView('editor')
+    }
+  }, [streamingFileContent, mode])
+
+  useEffect(() => {
+    if (!isGenerating && mode === 'agent' && activeView === 'editor') {
+      // Switch back to preview after generation completes (small delay for final render)
+      const timer = setTimeout(() => setActiveView('preview'), 1500)
+      return () => clearTimeout(timer)
+    }
+  }, [isGenerating, mode, activeView])
 
   const hasCode = Object.keys(currentCode).length > 0
 

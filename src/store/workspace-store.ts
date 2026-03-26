@@ -46,6 +46,10 @@ interface WorkspaceState {
   qaAttempts: number
   qaEnabled: boolean
 
+  // Editor tracking (agent mode live preview)
+  activeEditorFile: string | null
+  streamingFileContent: { path: string; lines: string[]; currentLine: number } | null
+
   // Settings
   mode: WorkspaceMode
   model: ModelProvider
@@ -79,6 +83,9 @@ interface WorkspaceState {
   addAgentStep: (step: AgentStep) => void
   clearAgentSteps: () => void
   setMultiAgent: (v: boolean) => void
+  setActiveEditorFile: (path: string | null) => void
+  setStreamingFileContent: (v: { path: string; lines: string[]; currentLine: number } | null) => void
+  advanceStreamingLine: () => void
   setQaErrors: (errors: string[]) => void
   incrementQaAttempts: () => void
   resetQa: () => void
@@ -103,6 +110,8 @@ const initialState = {
   agentIterations: null as { current: number; max: number } | null,
   agentSteps: [] as AgentStep[],
   multiAgent: true,
+  activeEditorFile: null as string | null,
+  streamingFileContent: null as { path: string; lines: string[]; currentLine: number } | null,
   qaErrors: [] as string[],
   qaAttempts: 0,
   qaEnabled: true,
@@ -188,6 +197,22 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     set((state) => ({ agentSteps: [...state.agentSteps, step] })),
   clearAgentSteps: () => set({ agentSteps: [], agentIterations: null }),
   setMultiAgent: (v) => set({ multiAgent: v }),
+  setActiveEditorFile: (path) => set({ activeEditorFile: path }),
+  setStreamingFileContent: (v) => set({ streamingFileContent: v }),
+  advanceStreamingLine: () =>
+    set((state) => {
+      if (!state.streamingFileContent) return state
+      const next = state.streamingFileContent.currentLine + 1
+      if (next >= state.streamingFileContent.lines.length) {
+        return { streamingFileContent: null }
+      }
+      return {
+        streamingFileContent: {
+          ...state.streamingFileContent,
+          currentLine: next,
+        },
+      }
+    }),
   setQaErrors: (errors) => set({ qaErrors: errors }),
   incrementQaAttempts: () =>
     set((state) => ({ qaAttempts: state.qaAttempts + 1 })),

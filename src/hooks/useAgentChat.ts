@@ -138,11 +138,20 @@ export function useAgentChat() {
                     metadata: { tool: event.tool },
                     timestamp: new Date().toISOString(),
                   })
-                  // Immediately merge write_file into currentCode for real-time preview
+                  // Immediately merge write_file into currentCode + start streaming animation
                   if (event.tool.name === 'write_file' && event.tool.input.path && event.tool.input.content) {
                     const filePath = String(event.tool.input.path)
                     const normalizedPath = filePath.startsWith('/') ? filePath : `/${filePath}`
-                    mergeCode({ [normalizedPath]: String(event.tool.input.content) })
+                    const fileContent = String(event.tool.input.content)
+                    mergeCode({ [normalizedPath]: fileContent })
+                    // Trigger live editor view
+                    const store = useWorkspaceStore.getState()
+                    store.setActiveEditorFile(normalizedPath)
+                    store.setStreamingFileContent({
+                      path: normalizedPath,
+                      lines: fileContent.split('\n'),
+                      currentLine: 0,
+                    })
                   }
                   // Add tool call as a message
                   const toolMsg: ChatMessage = {
