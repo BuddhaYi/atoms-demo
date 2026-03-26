@@ -15,7 +15,7 @@ interface AgentLoopConfig {
   sandbox?: SandboxSession
 }
 
-const DEFAULT_MAX_ITERATIONS = 15
+const DEFAULT_MAX_ITERATIONS = 30
 const DEFAULT_TIMEOUT_MS = 300_000
 
 export function runAgentLoop(config: AgentLoopConfig): ReadableStream<Uint8Array> {

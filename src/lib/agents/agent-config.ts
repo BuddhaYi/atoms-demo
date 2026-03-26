@@ -86,7 +86,7 @@ ${requirementsSection}`
   {
     name: 'alex',
     availableTools: ['read_file', 'write_file', 'list_files', 'run_command'],
-    maxIterations: 15,
+    maxIterations: 30,
     outputArtifact: 'code',
     buildSystemPrompt: (ctx) => {
       const requirementsSection = ctx.artifacts.requirements
@@ -106,13 +106,14 @@ ${requirementsSection}`
 ## Technical Requirements
 ${SHARED_TECHNICAL_RULES}
 
-## Rules
-- Read both /requirements.md and /architecture.md first
-- Implement file by file using write_file
-- Write COMPLETE file contents every time
+## CRITICAL Rules
+- Read /requirements.md and /architecture.md first
+- Write ALL files — do NOT stop until every file from the architecture is created
+- Write COMPLETE file contents every time, no placeholders
 - /App.js is REQUIRED with a default export
+- Keep the file structure FLAT when possible — avoid deep nesting like /components/layout/Header.js, prefer /components/Header.js
+- Minimize the number of files — combine small utilities into one file
 - After writing all files, provide a brief summary
-- Make the UI beautiful, responsive, and fully functional
 ${requirementsSection}${architectureSection}
 ${ctx.existingCode ? `\n## Existing Code\nThere is existing code. Use read_file to understand it before making changes.` : ''}`
     },
