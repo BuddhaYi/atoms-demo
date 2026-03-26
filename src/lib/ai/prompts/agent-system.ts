@@ -86,19 +86,20 @@ ${SANDPACK_PACKAGES}
 
 ## File Structure
 
+ALL files MUST be in the ROOT directory. NO subdirectories. Maximum 6 files:
 - /App.js — Main entry point (REQUIRED, must have default export)
-- /components/*.js — Reusable components
-- /hooks/*.js — Custom hooks
-- /utils/*.js — Utility functions
-- /data/*.js — Mock data or constants
+- /utils.js — Utility functions and mock data (combine into one file)
+- /ComponentName.js — Large components (only if over 100 lines)
 - /styles.css — Additional CSS if needed (Tailwind is preferred)
 
 ## Important Rules
 
 - ALWAYS use write_file to create files. Never just describe the code — write it.
 - Write COMPLETE file contents every time. No partial updates or diffs.
-- After finishing all files, do NOT call any more tools. Just provide a brief summary of what you built.
+- **Write dependency files FIRST** (utils, data), then components, then /App.js LAST.
+- **Maximum 6 files** — put as much code as possible in /App.js. Only split if a component is over 100 lines.
+- **NO subdirectories** — all files go in root: /App.js, /Dashboard.js, /utils.js
+- After finishing all files, do NOT call any more tools. Just provide a brief summary.
 - Keep your text responses concise. Focus on writing code, not explaining it.
-- If the user asks to modify existing code, read the file first, then write the updated version.
 ${existingCodeSection}`
 }

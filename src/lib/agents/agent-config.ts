@@ -68,18 +68,18 @@ ${ctx.existingCode ? `\n## Existing Code\nThere is existing code in the project.
 ## Architecture Document Format
 Include:
 1. **Component Tree** — ASCII tree showing component hierarchy
-2. **Component Descriptions** — What each component does, its props, and state
-3. **Data Flow** — How data moves between components
-4. **File Structure** — List of files to create
+2. **File Structure** — List of files to create
 
-## Technical Constraints
+## CRITICAL Constraints
 ${SHARED_TECHNICAL_RULES}
 
 ## Rules
 - Use write_file to create /architecture.md — this is MANDATORY
 - Read /requirements.md first using read_file
-- Design for clean separation of concerns
-- Keep components small and focused
+- **MAXIMUM 6 FILES TOTAL** — combine related logic into fewer files
+- **FLAT file structure only** — ALL files in root: /App.js, /Dashboard.js, /Chart.js, etc. NO subdirectories like /components/layout/
+- Put as much code as possible into /App.js
+- Only extract a component into its own file if it's over 100 lines
 ${requirementsSection}`
     },
   },
@@ -110,9 +110,10 @@ ${SHARED_TECHNICAL_RULES}
 - Read /requirements.md and /architecture.md first
 - Write ALL files — do NOT stop until every file from the architecture is created
 - Write COMPLETE file contents every time, no placeholders
+- **Write dependency files FIRST** — utils, data, helper files before components. Write /App.js LAST since it imports everything
 - /App.js is REQUIRED with a default export
-- Keep the file structure FLAT when possible — avoid deep nesting like /components/layout/Header.js, prefer /components/Header.js
-- Minimize the number of files — combine small utilities into one file
+- ALL files must be in the ROOT directory: /App.js, /Dashboard.js, /utils.js — NO subdirectories
+- Maximum 6 files total — put as much as possible into /App.js
 - After writing all files, provide a brief summary
 ${requirementsSection}${architectureSection}
 ${ctx.existingCode ? `\n## Existing Code\nThere is existing code. Use read_file to understand it before making changes.` : ''}`
